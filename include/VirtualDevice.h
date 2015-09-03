@@ -1,12 +1,12 @@
 /*
- * physDummyDevice.h - base class for MTCA.4u dummy devices that fit into the physics simulation framework
+ * VirtualDevice.h - base class for MTCA.4u dummy devices that fit into the physics simulation framework
  *
  *  Created on: Aug 27, 2015
  *      Author: martin.hierholzer@desy.de
  */
 
-#ifndef PHYSDUMMYDEVICE_H
-#define PHYSDUMMYDEVICE_H
+#ifndef VIRTUALDEVICE_H
+#define VIRTUALDEVICE_H
 
 #include <limits>
 #include <string>
@@ -23,13 +23,13 @@
 
 #include <MtcaMappedDevice/DummyDevice.h>
 
+#include "timer.h"
+
 using namespace boost::msm::front::euml;
 namespace msm = boost::msm;
 namespace mpl = boost::mpl;
-using boost::fusion::set;
 
-namespace mtca4u {
-  namespace VirtualLab {
+namespace mtca4u { namespace VirtualLab {
 
 ///
 /// Declare an event. Use instead of BOOST_MSM_EUML_EVENT, as we must not create instances for the events as well.
@@ -176,6 +176,31 @@ namespace mtca4u {
     };
 
 ///
+/// Declare a timer with a given name. Will fire the given event.
+///
+#define DECLARE_TIMER(name,event) timer<event> name;
+
+///
+/// Declare a timer group with a given name. The additional arguments must be the timers part of
+/// this group, previously declared using DECLARE_TIMER.
+///
+#define DECLARE_TIMER_GROUP(name, ...)                                                                          \
+    typedef boost::fusion::vector< DECLARE_TIMER_GROUP_DECLARE_VECTOR(__VA_ARGS__) > name ## __;                \
+    class name ## _: public timerGroup<name ## __> {                                                            \
+      public:                                                                                                   \
+        name ## _(dummyDeviceType *_dev)                                                                        \
+        : timerGroup(),                                                                                         \
+          dev(_dev)                                                                                             \
+        {                                                                                                       \
+          DECLARE_TIMER_GROUP_MAKEMAP(__VA_ARGS__)                                                              \
+          timers = new name ## __( DECLARE_TIMER_GROUP_INIT_VECTOR(__VA_ARGS__) );                              \
+        }                                                                                                       \
+      protected:                                                                                                \
+        dummyDeviceType *dev;                                                                                   \
+    };                                                                                                          \
+    name ## _ name;
+
+///
 /// declare a state machine.
 /// dummyDeviceType is the class name of the physDummyDevice implementation the state machine will be used in
 /// stateMachineName is the name of the state machine itself. Several types will be defined based on this names with
@@ -206,300 +231,189 @@ namespace mtca4u {
     typedef msm::back::state_machine<stateMachineName ## _> stateMachineName;
 
 
-    /** The dummy device opens a mapping file instead of a device, and
-     *  implements all registers defined in the mapping file in memory.
-     *  Like this it mimics the real PCIe device.
-     *
-     *  This class helps implementing dummy devices using a state machine and allows an easy connection with the physics
-     *  simulation framework.
-     *
-     *  The physDummyDevice class is a template of the derived implementation, which means it follows a CRTP
-     */
-    template<class derived>
-    class VirtualDevice : public DummyDevice
-    {
+/** The dummy device opens a mapping file instead of a device, and
+ *  implements all registers defined in the mapping file in memory.
+ *  Like this it mimics the real PCIe device.
+ *
+ *  This class helps implementing dummy devices using a state machine and allows an easy connection with the physics
+ *  simulation framework.
+ *
+ *  The physDummyDevice class is a template of the derived implementation, which means it follows a CRTP
+ */
+template<class derived>
+class VirtualDevice : public DummyDevice
+{
+  public:
+
+    VirtualDevice() :
+      lastWrittenData(NULL),
+      lastWrittenSize(0),
+      isOpened(false)
+    {}
+    virtual ~VirtualDevice() {}
+
+    /// on device open: fire the device-open event
+    virtual void openDev(const std::string &mappingFileName, int perm=O_RDWR, devConfigBase *pConfig=NULL) {
+      if(isOpened) throw DummyDeviceException("Device is already opened.", DummyDeviceException::ALREADY_OPEN);
+      isOpened = true;
+      DummyDevice::openDev(mappingFileName, perm, pConfig);
+    }
+
+    /// on device close: fire the device-close event
+    virtual void closeDev() {
+      if(!isOpened) throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
+      isOpened = false;
+      DummyDevice::closeDev();
+    }
+
+    /// redirect writeReg to writeArea, so the events get triggered here, too
+    virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
+      writeArea(regOffset, &data, 4, bar);
+    }
+
+    /// redirect readReg to writeArea, so the events get triggered here, too
+    virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) {
+      readArea(regOffset, data, 4, bar);
+    }
+
+    /// override writeArea to fire the events
+    virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
+      // save as last written data, for use inside guards of the events we may trigger now
+      lastWrittenData = data;
+      lastWrittenSize = size;
+
+      // perform the actual write
+      DummyDevice::writeArea(regOffset, data, size, bar);
+
+      // trigger events
+      regWriteEvents(regOffset,data,size,bar);
+    }
+
+    /// override readArea to fire the events
+    virtual void readArea(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) {
+      // perform the actual write
+      DummyDevice::readArea(regOffset, data, size, bar);
+
+      // trigger events
+      regReadEvents(regOffset,data,size,bar);
+    }
+
+  protected:
+
+    /// define the dummyDeviceType used in the macros
+    typedef derived dummyDeviceType;
+
+    /// trigger register-write events. Will be implemented using WRITE_EVENT_TABLE in the device implementation
+    virtual void regWriteEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
+      (void) regOffset; (void) data; (void) size; (void) bar;
+    };
+
+    /// trigger register-read events. Will be implemented using READ_EVENT_TABLE in the device implementation
+    virtual void regReadEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
+      (void) regOffset; (void) data; (void) size; (void) bar;
+    };
+
+    /// VirtualDevice::timer class
+    template<class timerEvent>
+    class timer {
       public:
+        timer(derived *_dev) : dev(_dev),request(-1),current(0) {}
 
-        VirtualDevice() :
-          lastWrittenData(NULL),
-          lastWrittenSize(0),
-          isOpened(false)
-        {}
-        virtual ~VirtualDevice() {}
-
-        /// on device open: fire the device-open event
-        virtual void openDev(const std::string &mappingFileName, int perm=O_RDWR, devConfigBase *pConfig=NULL) {
-          if(isOpened) throw DummyDeviceException("Device is already opened.", DummyDeviceException::ALREADY_OPEN);
-          isOpened = true;
-          DummyDevice::openDev(mappingFileName, perm, pConfig);
+        /// Set the timer to fire in tval milliseconds
+        void set(double tval) {
+          request = tval+current;
         }
 
-        /// on device close: fire the device-close event
-        virtual void closeDev() {
-          if(!isOpened) throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
-          isOpened = false;
-          DummyDevice::closeDev();
+        /// Advance the timer's current time by tval milliseconds. Returns true if the timer was fired.
+        /// If tval < 0 this function does nothing.
+        /// Note: calling this function with tval > getRemaining() will fire the event only a single time!
+        bool advance(double tval) {
+          if(tval < 0) return false;
+          current += tval;
+          if(request > 0 && current >= request) {
+            request = -1;
+            dev->theStateMachine.process_event( timerEvent() );
+            return true;
+          }
+          return false;
         }
 
-        /// redirect writeReg to writeArea, so the events get triggered here, too
-        virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
-          writeArea(regOffset, &data, 4, bar);
+        /// Obtain remaining time until the timer fires. Will be negative if the timer is not set.
+        double getRemaining() {
+          if(request > 0) {
+            return request-current;
+          }
+          else {
+            return -1;
+          }
         }
 
-        /// redirect readReg to writeArea, so the events get triggered here, too
-        virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) {
-          readArea(regOffset, data, 4, bar);
-        }
-
-        /// override writeArea to fire the events
-        virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-          // save as last written data, for use inside guards of the events we may trigger now
-          lastWrittenData = data;
-          lastWrittenSize = size;
-
-          // perform the actual write
-          DummyDevice::writeArea(regOffset, data, size, bar);
-
-          // trigger events
-          regWriteEvents(regOffset,data,size,bar);
-        }
-
-        /// override readArea to fire the events
-        virtual void readArea(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) {
-          // perform the actual write
-          DummyDevice::readArea(regOffset, data, size, bar);
-
-          // trigger events
-          regReadEvents(regOffset,data,size,bar);
+        /// Get current timer
+        double getCurrent() {
+          return current;
         }
 
       protected:
 
-        /// define the dummyDeviceType used in the macros
-        typedef derived dummyDeviceType;
+        /// the dummy device with the state machine
+        derived *dev;
 
-        /// trigger register-write events. Will be implemented using WRITE_EVENT_TABLE in the device implementation
-        virtual void regWriteEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-          (void) regOffset; (void) data; (void) size; (void) bar;
-        };
+        /// requested time
+        double request;
 
-        /// trigger register-read events. Will be implemented using READ_EVENT_TABLE in the device implementation
-        virtual void regReadEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-          (void) regOffset; (void) data; (void) size; (void) bar;
-        };
-
-        /// timer class
-        template<class timerEvent>
-        class timer {
-          public:
-            timer() : dev(NULL),request(-1),current(0) {}
-
-            /// set dummy device. Must be done before calling advance().
-            void setDummyDevice(derived *_dev) {
-              dev = _dev;
-            }
-
-            /// set the timer to fire in tval milliseconds
-            void set(double tval) {
-              request = tval+current;
-            }
-
-            /// advance the timer's current time by tval milliseconds. Returns true if the timer was fired
-            bool advance(double tval) {
-              current += tval;
-              if(request > 0 && current >= request) {
-                request = -1;
-                dev->theStateMachine.process_event( timerEvent() );
-                return true;
-              }
-              return false;
-            }
-
-            /// obtain remaining time until the timer fires. Will be negative if the timer is not set.
-            double getRemaining() {
-              if(request > 0) {
-                return request-current;
-              }
-              else {
-                return -1;
-              }
-            }
-
-          protected:
-
-            /// the dummy device with the state machine
-            derived *dev;
-
-            /// requested time
-            double request;
-
-            /// current time
-            double current;
-        };
-
-        /// Timer group
-        /// The template argument timerSet must be a BOOST fusion set of all timers
-        template<class timerSet>
-        class timerGroup {
-          public:
-            timerGroup(derived *_dev)
-              : current(0),
-                minRemaining(0),
-                hasFired(false)
-            {
-              //if(names.size() != (unsigned int) size(timers)) throw("Size of name vector does not match size of timer set.");
-              boost::fusion::for_each(timers, setDummyDevice(_dev));
-            }
-            ~timerGroup() {}
-
-            /// obtains the timer matching the given type
-            template<class T>
-            T& get(T) {
-              return boost::fusion::at_key<T>(timers);
-            }
-
-            /// get remaining time until the next timer fires.
-            double getRemaining() {
-              minRemaining = std::numeric_limits<double>::max();
-              boost::fusion::for_each(timers, findMinRemaining(this));
-              if(minRemaining >= std::numeric_limits<double>::max()) minRemaining = -1;
-              return minRemaining;
-            }
-
-            /// advance the group to the next requested time of the given sub-timer. Returns true if any timer was fired.
-            template<class T>
-            bool advanceByTimer(T) {
-              T &timer = boost::fusion::at_key<T>(timers);
-              double tval = timer.getRemaining();
-              if(tval < 0) return false;
-              return advance(tval);
-            }
-
-            /// advance the timer's current time by tval milliseconds. Returns true if any timer was fired
-            bool advance(double tval) {
-              hasFired = false;
-              boost::fusion::for_each(timers, advanceTimer(this,tval));
-              return hasFired;
-            }
-
-            /// advance the timer to the next requested time. Returns true if any timer was fired. Otherwise none of the
-            /// timers was set and thus the current time remains unchanged
-            bool advanceAll() {
-              return advance(getRemaining());
-            }
-
-            /// get current time (in milliseconds)
-            double getCurrent()
-            {
-              return current;
-            }
-
-          protected:
-
-            /// functor to set the dummy device of a timer
-            struct setDummyDevice {
-              setDummyDevice(derived *_dev) : dev(_dev) {}
-                template<class T>
-                void operator()(T& t) const {
-                  t.setDummyDevice(dev);
-                }
-              private:
-                derived *dev;
-            };
-
-            /// functor to find the minimum remaining time in all timers
-            struct findMinRemaining {
-              findMinRemaining(timerGroup<timerSet> *_group) : group(_group) {}
-                template<class T>
-                void operator()(T& t) const {
-                  double r = t.getRemaining();
-                  if(r > 0) group->minRemaining = fmin(group->minRemaining, r);
-                }
-              private:
-                timerGroup<timerSet> *group;
-            };
-
-            /// functor to advance a timer by the given milliseconds
-            struct advanceTimer {
-                advanceTimer(timerGroup<timerSet> *_group, double _tval) : group(_group), tval(_tval) {}
-                template<class T>
-                void operator()(T& t) const {
-                  bool r;
-                  r = t.advance(tval);
-                  if(r) group->hasFired = true;
-                }
-              private:
-                timerGroup<timerSet> *group;
-                double tval;
-            };
-
-            /// fusion tuple of timers
-            timerSet timers;
-
-            /// vector of names
-            //std::vector<std::string> names;
-
-            /// current time
-            double current;
-
-            /// temporary field to determine the minimum remaining time (via findMinRemaining)
-            double minRemaining;
-
-            /// temporary field to determine if a timer has fired when using the advanceTimer functor
-            bool hasFired;
-
-        };
-
-        /// register accessors (should go into DummyDevice class later?)
-        template<typename T>
-        class dummyRegister {
-          public:
-
-            void open(derived *dev, std::string module, std::string name)
-            {
-              _dev = dev;
-              dev->_registerMapping->getRegisterInfo(name, elem, module);
-            }
-
-            T get(int index=0)
-            {
-              T value;
-              _dev->readReg(elem.reg_address + sizeof(int32_t)*index, reinterpret_cast<int32_t*>(&value), elem.reg_bar);
-              return value;
-            }
-            void set(T value, int index=0)
-            {
-              int32_t *v = reinterpret_cast<int32_t*>(&value);
-              _dev->writeRegisterWithoutCallback(elem.reg_address + sizeof(int32_t)*index, *v, elem.reg_bar);
-            }
-            T operator[](int index)
-            {
-              return get(index);
-            }
-            T& operator=(T &rhs)
-            {
-              set(rhs);
-              return rhs;
-            }
-
-          protected:
-            mapFile::mapElem elem;
-            derived *_dev;
-        };
-
-        /// handy name for the int32_t register accessor
-        typedef dummyRegister<int32_t> intRegister;
-
-        /// last written data (into any register) and its size. Will be used in guard conditions.
-        int32_t const *lastWrittenData;
-        size_t lastWrittenSize;
-
-        /// flag if device currenty opened
-        bool isOpened;
-
+        /// current time
+        double current;
     };
 
-  } // namespace VirtualLab
-}// namespace mtca4u
+    /// register accessors (should go into DummyDevice class later?)
+    template<typename T>
+    class dummyRegister {
+      public:
 
-#endif /* PHYSDUMMYDEVICE_H */
+        void open(derived *dev, std::string module, std::string name)
+        {
+          _dev = dev;
+          dev->_registerMapping->getRegisterInfo(name, elem, module);
+        }
+
+        T get(int index=0)
+        {
+          T value;
+          _dev->readReg(elem.reg_address + sizeof(int32_t)*index, reinterpret_cast<int32_t*>(&value), elem.reg_bar);
+          return value;
+        }
+        void set(T value, int index=0)
+        {
+          int32_t *v = reinterpret_cast<int32_t*>(&value);
+          _dev->writeRegisterWithoutCallback(elem.reg_address + sizeof(int32_t)*index, *v, elem.reg_bar);
+        }
+        T operator[](int index)
+        {
+          return get(index);
+        }
+        T& operator=(T &rhs)
+        {
+          set(rhs);
+          return rhs;
+        }
+
+      protected:
+        mapFile::mapElem elem;
+        derived *_dev;
+    };
+
+    /// handy name for the int32_t register accessor
+    typedef dummyRegister<int32_t> intRegister;
+
+    /// last written data (into any register) and its size. Will be used in guard conditions.
+    int32_t const *lastWrittenData;
+    size_t lastWrittenSize;
+
+    /// flag if device currenty opened
+    bool isOpened;
+
+};
+
+}}// namespace mtca4u::VirtualLab
+
+#endif /* VIRTUALDEVICE_H */
