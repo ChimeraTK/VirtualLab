@@ -125,8 +125,14 @@ class VirtualDeviceTest {
   public:
     VirtualDeviceTest() {}
 
+    /// test the device open and close events
+    void testDevOpenClose();
+
     /// test the timer group system
     void testTimerGroup();
+
+    /// test the register accessor
+    void testRegisterAccessor();
 
   private:
     VirtualTestDevice device;
@@ -141,8 +147,9 @@ class  DummyDeviceTestSuite : public test_suite {
     DummyDeviceTestSuite() : test_suite("DummyDevice test suite") {
       boost::shared_ptr<VirtualDeviceTest> dummyDeviceTest( new VirtualDeviceTest );
 
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testDevOpenClose, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testTimerGroup, dummyDeviceTest ) );
-      //add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testTimer, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testRegisterAccessor, dummyDeviceTest ) );
     }};
 
 /**********************************************************************************************************************/
@@ -152,6 +159,22 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
   framework::master_test_suite().add(new DummyDeviceTestSuite);
 
   return NULL;
+}
+
+/**********************************************************************************************************************/
+void VirtualDeviceTest::testDevOpenClose() {
+  std::cout << "testDevOpenClose" << std::endl;
+
+  // open and close the device and check the states
+  BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
+  device.openDev("test.mapp");
+  BOOST_CHECK( device.theStateMachine.current_state()[0] == 1 );
+  device.closeDev();
+  BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
+  device.openDev("test.mapp");
+  BOOST_CHECK( device.theStateMachine.current_state()[0] == 1 );
+  device.closeDev();
+  BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
 }
 
 /**********************************************************************************************************************/
@@ -257,9 +280,7 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device.timers.getCurrent() == 30 );
 
   // open the device
-  BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
   device.openDev("test.mapp");
-  BOOST_CHECK( device.theStateMachine.current_state()[0] == 1 );
 
   // set first timer and make it fire, then check if in SomeIntermediateState()
   device.myTimer.set(5);
@@ -287,16 +308,55 @@ void VirtualDeviceTest::testTimerGroup() {
 
   // close the device
   device.closeDev();
-  BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
 }
+
 /**********************************************************************************************************************/
-/*
-void VirtualDeviceTest::testTimer() {
-  std::cout << "testTimer" << std::endl;
+void VirtualDeviceTest::testRegisterAccessor() {
+  std::cout << "testRegisterAccessor" << std::endl;
+
+  // open the device
   device.openDev("test.mapp");
 
-  device.myTimer.set(
+  // test get()
+  device._barContents[1][0] = 0;
+  BOOST_CHECK( device.someRegister.get() == 0 );
+  device._barContents[1][0] = 42;
+  BOOST_CHECK( device.someRegister.get() == 42 );
 
+  // test get() with index
+  device._barContents[1][1] = 0;
+  BOOST_CHECK( device.someRegister.get(1) == 0 );
+  device._barContents[1][1] = 120;
+  BOOST_CHECK( device.someRegister.get(1) == 120 );
+
+  // test set()
+  device.someRegister.set(0);
+  BOOST_CHECK( device._barContents[1][0] == 0 );
+  device.someRegister.set(33);
+  BOOST_CHECK( device._barContents[1][0] == 33 );
+
+  // test set() with index
+  device.someRegister.set(0,5);
+  BOOST_CHECK( device._barContents[1][5] == 0 );
+  device.someRegister.set(99,5);
+  BOOST_CHECK( device._barContents[1][5] == 99 );
+
+  // test operator=
+  device.someRegister = 3;
+  BOOST_CHECK( device._barContents[1][0] == 3 );
+
+  // test operator[] on r.h.s.
+  device._barContents[1][0] = 5;
+  device._barContents[1][3] = 77;
+  BOOST_CHECK( device.someRegister[0] == 5 );
+  BOOST_CHECK( device.someRegister[3] == 77 );
+
+  // test operator[] on l.h.s.
+  device.someRegister[0] = 666;
+  device.someRegister[9] = 999;
+  BOOST_CHECK( device._barContents[1][0]== 666 );
+  BOOST_CHECK( device._barContents[1][9]== 999 );
+
+  // close the device
   device.closeDev();
 }
-*/

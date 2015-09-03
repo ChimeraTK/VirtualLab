@@ -370,31 +370,46 @@ class VirtualDevice : public DummyDevice
     class dummyRegister {
       public:
 
+        /// "Open" the register: obtain the register information from the mapping file.
+        /// Call this function in the overloaded openDev() function.
         void open(derived *dev, std::string module, std::string name)
         {
           _dev = dev;
           dev->_registerMapping->getRegisterInfo(name, elem, module);
         }
 
-        T get(int index=0)
+        /// Get register content by index. TODO throw exception if range exceeded
+        T& get(int index=0)
         {
-          T value;
-          _dev->readReg(elem.reg_address + sizeof(int32_t)*index, reinterpret_cast<int32_t*>(&value), elem.reg_bar);
-          return value;
+          int32_t *v = &(_dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index]);
+          return *(reinterpret_cast<T*>(v));
         }
+
+        /// Set register content by index. TODO throw exception if range exceeded
         void set(T value, int index=0)
         {
           int32_t *v = reinterpret_cast<int32_t*>(&value);
-          _dev->writeRegisterWithoutCallback(elem.reg_address + sizeof(int32_t)*index, *v, elem.reg_bar);
+          _dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index] = *v;
         }
-        T operator[](int index)
+
+        /// Get or set register content by [] operator.
+        T& operator[](int index)
         {
           return get(index);
         }
+
+        /// Set register content by = operator (call by reference).
         T& operator=(T &rhs)
         {
           set(rhs);
           return rhs;
+        }
+
+        /// Set register content by = operator (call by value).
+        T& operator=(T rhs)
+        {
+          set(rhs);
+          return get();
         }
 
       protected:
