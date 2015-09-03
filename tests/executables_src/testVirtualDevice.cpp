@@ -160,8 +160,8 @@ void VirtualDeviceTest::testTimerGroup() {
 
   // check if name vector is correctly initialised
   BOOST_CHECK( device.timers.names.size() == 2 );
-  BOOST_CHECK( device.timers.names[0] == "mySecondTimer" );     // they get stored in reverse order
-  BOOST_CHECK( device.timers.names[1] == "myTimer" );
+  BOOST_CHECK( device.timers.names[0] == "myTimer" );
+  BOOST_CHECK( device.timers.names[1] == "mySecondTimer" );
 
   // check if getRemaining works if timers are not set
   BOOST_CHECK( device.myTimer.getRemaining() == -1 );
