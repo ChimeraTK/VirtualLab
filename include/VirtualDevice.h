@@ -398,14 +398,7 @@ class VirtualDevice : public DummyDevice
           return get(index);
         }
 
-        /// Set register content by = operator (call by reference).
-        T& operator=(T &rhs)
-        {
-          set(rhs);
-          return rhs;
-        }
-
-        /// Set register content by = operator (call by value).
+        /// Set register content by = operator.
         T& operator=(T rhs)
         {
           set(rhs);
