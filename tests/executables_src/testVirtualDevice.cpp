@@ -42,10 +42,10 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
     virtual ~VirtualTestDevice() {}
 
     /// on device open: fire the device-open event
-    virtual void openDev(const std::string &mappingFileName, int perm=O_RDWR, devConfigBase *pConfig=NULL) {
+    virtual void open(const std::string &mappingFileName, int perm=O_RDWR, DeviceConfigBase *pConfig=NULL) {
 
       // open the underlying dummy device
-      VirtualDevice::openDev(mappingFileName, perm, pConfig);
+      VirtualDevice::open(mappingFileName, perm, pConfig);
 
       // send onDeviceOpen event
       theStateMachine.process_event(onDeviceOpen());
@@ -56,8 +56,8 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
     }
 
     /// on device close: fire the device-close event
-    virtual void closeDev() {
-      VirtualDevice::closeDev();
+    virtual void close() {
+      VirtualDevice::close();
       theStateMachine.process_event(onDeviceClose());
     }
 
@@ -167,13 +167,13 @@ void VirtualDeviceTest::testDevOpenClose() {
 
   // open and close the device and check the states
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
-  device.openDev("test.mapp");
+  device.open("test.mapp");
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 1 );
-  device.closeDev();
+  device.close();
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
-  device.openDev("test.mapp");
+  device.open("test.mapp");
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 1 );
-  device.closeDev();
+  device.close();
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
 }
 
@@ -280,7 +280,7 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device.timers.getCurrent() == 30 );
 
   // open the device
-  device.openDev("test.mapp");
+  device.open("test.mapp");
 
   // set first timer and make it fire, then check if in SomeIntermediateState()
   device.myTimer.set(5);
@@ -307,7 +307,7 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device.someCounter == 11 );
 
   // close the device
-  device.closeDev();
+  device.close();
 }
 
 /**********************************************************************************************************************/
@@ -315,7 +315,7 @@ void VirtualDeviceTest::testRegisterAccessor() {
   std::cout << "testRegisterAccessor" << std::endl;
 
   // open the device
-  device.openDev("test.mapp");
+  device.open("test.mapp");
 
   // test get()
   device._barContents[1][0] = 0;
@@ -358,5 +358,5 @@ void VirtualDeviceTest::testRegisterAccessor() {
   BOOST_CHECK( device._barContents[1][9]== 999 );
 
   // close the device
-  device.closeDev();
+  device.close();
 }

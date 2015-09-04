@@ -11,6 +11,8 @@
 #include <limits>
 #include <string>
 
+#include <boost/shared_ptr.hpp>
+
 #include <boost/fusion/container/set.hpp>
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/include/at_key.hpp>
@@ -22,6 +24,7 @@
 #include <boost/msm/front/euml/euml.hpp>
 
 #include <MtcaMappedDevice/DummyDevice.h>
+#include <MtcaMappedDevice/FixedPointConverter.h>
 
 #include "timer.h"
 
@@ -107,7 +110,7 @@ namespace mtca4u { namespace VirtualLab {
 ///
 #define CONNECT_REGISTER_EVENT(eventName, registerModule, registerName)                                         \
   {                                                                                                             \
-    mapFile::mapElem elem;                                                                                      \
+  RegisterInfoMap::RegisterInfo elem;                                                                           \
     _registerMapping->getRegisterInfo(registerName, elem, registerModule);                                      \
     if(bar == elem.reg_bar && regOffset >= elem.reg_address && regOffset < elem.reg_address+elem.reg_size) {    \
       theStateMachine.process_event(eventName ());                                                              \
@@ -230,7 +233,7 @@ namespace mtca4u { namespace VirtualLab {
     };                                                                                                          \
     typedef msm::back::state_machine<stateMachineName ## _> stateMachineName;
 
-
+/*********************************************************************************************************************/
 /** The dummy device opens a mapping file instead of a device, and
  *  implements all registers defined in the mapping file in memory.
  *  Like this it mimics the real PCIe device.
@@ -253,17 +256,17 @@ class VirtualDevice : public DummyDevice
     virtual ~VirtualDevice() {}
 
     /// on device open: fire the device-open event
-    virtual void openDev(const std::string &mappingFileName, int perm=O_RDWR, devConfigBase *pConfig=NULL) {
+    virtual void open(const std::string &mappingFileName, int perm=O_RDWR, DeviceConfigBase *pConfig=NULL) {
       if(isOpened) throw DummyDeviceException("Device is already opened.", DummyDeviceException::ALREADY_OPEN);
       isOpened = true;
-      DummyDevice::openDev(mappingFileName, perm, pConfig);
+      DummyDevice::open(mappingFileName, perm, pConfig);
     }
 
     /// on device close: fire the device-close event
-    virtual void closeDev() {
+    virtual void close() {
       if(!isOpened) throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
       isOpened = false;
-      DummyDevice::closeDev();
+      DummyDevice::close();
     }
 
     /// redirect writeReg to writeArea, so the events get triggered here, too
@@ -365,6 +368,14 @@ class VirtualDevice : public DummyDevice
         double current;
     };
 
+    /// last written data (into any register) and its size. Will be used in guard conditions.
+    int32_t const *lastWrittenData;
+    size_t lastWrittenSize;
+
+    /// flag if device currenty opened
+    bool isOpened;
+
+    /*********************************************************************************************************************/
     /// register accessors (should go into DummyDevice class later?)
     template<typename T>
     class dummyRegister {
@@ -372,27 +383,33 @@ class VirtualDevice : public DummyDevice
 
         /// "Open" the register: obtain the register information from the mapping file.
         /// Call this function in the overloaded openDev() function.
-        void open(derived *dev, std::string module, std::string name)
+        void open(derived *_dev, std::string module, std::string name)
         {
-          _dev = dev;
+          dev = _dev;
           dev->_registerMapping->getRegisterInfo(name, elem, module);
+    /*      if(elem.reg_frac_bits > 0 || elem.reg_width != sizeof(int32_t)*4 ||
+             std::numeric_limits<T>::is_signed() != elem.reg_signed)            {
+            fpc = boost::shared_ptr<FixedPointConverter>(
+                    new FixedPointConverter(elem.reg_width, elem.reg_frac_bits, elem.reg_signed );
+          }*/
         }
 
         /// Get register content by index. TODO throw exception if range exceeded
         T& get(int index=0)
         {
-          int32_t *v = &(_dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index]);
-          return *(reinterpret_cast<T*>(v));
+          int32_t *v = &(dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index]);
+          return *(static_cast<T*>(v));
         }
 
         /// Set register content by index. TODO throw exception if range exceeded
         void set(T value, int index=0)
         {
-          int32_t *v = reinterpret_cast<int32_t*>(&value);
-          _dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index] = *v;
+          int32_t *v = static_cast<int32_t*>(&value);
+          dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index] = *v;
         }
 
         /// Get or set register content by [] operator.
+        /// TODO this is not going to work with fixed-point conversion!
         T& operator[](int index)
         {
           return get(index);
@@ -406,21 +423,22 @@ class VirtualDevice : public DummyDevice
         }
 
       protected:
-        mapFile::mapElem elem;
-        derived *_dev;
+
+        /// register map information
+        RegisterInfoMap::RegisterInfo elem;
+
+        /// pointer to VirtualDevice
+        derived *dev;
+
+        /// pointer to fixed point converter
+        //boost::shared_ptr<FixedPointConverter> fpc;
     };
 
     /// handy name for the int32_t register accessor
     typedef dummyRegister<int32_t> intRegister;
 
-    /// last written data (into any register) and its size. Will be used in guard conditions.
-    int32_t const *lastWrittenData;
-    size_t lastWrittenSize;
-
-    /// flag if device currenty opened
-    bool isOpened;
-
 };
+
 
 }}// namespace mtca4u::VirtualLab
 
