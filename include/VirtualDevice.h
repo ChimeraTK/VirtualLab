@@ -88,8 +88,8 @@ namespace mtca4u { namespace VirtualLab {
 /// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events
 ///
 #define WRITE_EVENT_TABLE(table)                                                                                \
-  void regWriteEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {                      \
-    (void)regOffset; (void)data; (void)size; (void)bar;                                                         \
+  void regWriteEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {                 \
+    (void)bar; (void)address; (void)data; (void)sizeInBytes;                                                    \
     table                                                                                                       \
   }
 
@@ -97,8 +97,8 @@ namespace mtca4u { namespace VirtualLab {
 /// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for read events
 ///
 #define READ_EVENT_TABLE(table)                                                                                 \
-  void regReadEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {                       \
-    (void)regOffset; (void)data; (void)size; (void)bar;                                                         \
+  void regReadEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {                  \
+    (void)bar; (void)address; (void)data; (void)sizeInBytes;                                                    \
     table                                                                                                       \
   }
 
@@ -112,7 +112,7 @@ namespace mtca4u { namespace VirtualLab {
   {                                                                                                             \
   RegisterInfoMap::RegisterInfo elem;                                                                           \
     _registerMapping->getRegisterInfo(registerName, elem, registerModule);                                      \
-    if(bar == elem.reg_bar && regOffset >= elem.reg_address && regOffset < elem.reg_address+elem.reg_size) {    \
+    if(bar == elem.reg_bar && address >= elem.reg_address && regOffset < elem.reg_address+elem.reg_size) {      \
       theStateMachine.process_event(eventName ());                                                              \
     }                                                                                                           \
   }
@@ -269,36 +269,26 @@ class VirtualDevice : public DummyDevice
       DummyDevice::close();
     }
 
-    /// redirect writeReg to writeArea, so the events get triggered here, too
-    virtual void writeReg(uint32_t regOffset, int32_t data, uint8_t bar) {
-      writeArea(regOffset, &data, 4, bar);
-    }
-
-    /// redirect readReg to writeArea, so the events get triggered here, too
-    virtual void readReg(uint32_t regOffset, int32_t *data, uint8_t bar) {
-      readArea(regOffset, data, 4, bar);
-    }
-
     /// override writeArea to fire the events
-    virtual void writeArea(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
+    virtual void write(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
       // save as last written data, for use inside guards of the events we may trigger now
       lastWrittenData = data;
-      lastWrittenSize = size;
+      lastWrittenSize = sizeInBytes;
 
       // perform the actual write
-      DummyDevice::writeArea(regOffset, data, size, bar);
+      DummyDevice::write(bar, address, data, sizeInBytes);
 
       // trigger events
-      regWriteEvents(regOffset,data,size,bar);
+      regWriteEvents(bar,address,data,sizeInBytes);
     }
 
     /// override readArea to fire the events
-    virtual void readArea(uint32_t regOffset, int32_t *data, size_t size, uint8_t bar) {
-      // perform the actual write
-      DummyDevice::readArea(regOffset, data, size, bar);
-
+    virtual void read(uint8_t bar, uint32_t address, int32_t *data, size_t sizeInBytes) {
       // trigger events
-      regReadEvents(regOffset,data,size,bar);
+      regReadEvents(bar, address, data, sizeInBytes);
+
+      // perform the actual write
+      DummyDevice::read(bar, address, data, sizeInBytes);
     }
 
   protected:
@@ -307,13 +297,13 @@ class VirtualDevice : public DummyDevice
     typedef derived dummyDeviceType;
 
     /// trigger register-write events. Will be implemented using WRITE_EVENT_TABLE in the device implementation
-    virtual void regWriteEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-      (void) regOffset; (void) data; (void) size; (void) bar;
+    virtual void regWriteEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
+      (void) bar; (void) address; (void) data; (void) sizeInBytes;
     };
 
     /// trigger register-read events. Will be implemented using READ_EVENT_TABLE in the device implementation
-    virtual void regReadEvents(uint32_t regOffset, int32_t const *data, size_t size, uint8_t bar) {
-      (void) regOffset; (void) data; (void) size; (void) bar;
+    virtual void regReadEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
+      (void) bar; (void) address; (void) data; (void) sizeInBytes;
     };
 
     /// VirtualDevice::timer class
