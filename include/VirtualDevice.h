@@ -385,39 +385,84 @@ class VirtualDevice : public DummyDevice
         {
           dev = _dev;
           dev->_registerMapping->getRegisterInfo(name, elem, module);
-    /*      if(elem.reg_frac_bits > 0 || elem.reg_width != sizeof(int32_t)*4 ||
-             std::numeric_limits<T>::is_signed() != elem.reg_signed)            {
-            fpc = boost::shared_ptr<FixedPointConverter>(
-                    new FixedPointConverter(elem.reg_width, elem.reg_frac_bits, elem.reg_signed );
-          }*/
+          fpc =  FixedPointConverter(elem.reg_width, elem.reg_frac_bits, elem.reg_signed);
         }
 
-        /// Get register content by index. TODO throw exception if range exceeded
-        T& get(int index=0)
+        /// Get register content by index.
+        inline T get(int index=0)
         {
-          int32_t *v = &(dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index]);
-          return *(static_cast<T*>(v));
+          uint32_t v = dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index];
+          return fpc.template toCooked<T>(v);
         }
 
-        /// Set register content by index. TODO throw exception if range exceeded
-        void set(T value, int index=0)
+        /// Set register content by index.
+        inline void set(T value, int index=0)
         {
-          int32_t *v = static_cast<int32_t*>(&value);
-          dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index] = *v;
+          uint32_t v = fpc.toRaw(value);
+          dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index] = v;
         }
+
+        /// Temporary proxy class.
+        /// Will be returned in place of l.h.s. references for fixed-point converted data types.
+        class proxy {
+          public:
+            proxy(FixedPointConverter &_fpc, int32_t &_buffer) : fpc(_fpc), buffer(_buffer) {}
+
+            /// Implicit type conversion to user type T.
+            /// This covers already a lot of operations like arithmetics and comparison
+            inline operator T() {
+              return fpc.template toCooked<T>(buffer);
+            }
+
+            /// assignment operator
+            inline proxy operator=(T rhs)
+            {
+              buffer = fpc.toRaw(rhs);
+              return *this;
+            }
+
+            /// prefixed increment operator
+            inline proxy operator++() {
+              buffer = fpc.toRaw( fpc.template toCooked<T>(buffer) + 1 );
+              return *this;
+            }
+
+            /// prefixed decrement operator
+            inline proxy operator--() {
+              buffer = fpc.toRaw( fpc.template toCooked<T>(buffer) - 1 );
+              return *this;
+            }
+
+            /// postfixed increment operator
+            inline T operator++(int) {
+              T v = fpc.template toCooked<T>(buffer);
+              buffer = fpc.toRaw( v + 1 );
+              return v;
+            }
+
+            /// postfixed decrement operator
+            inline T operator--(int) {
+              T v = fpc.template toCooked<T>(buffer);
+              buffer = fpc.toRaw( v - 1 );
+              return v;
+            }
+
+          private:
+            FixedPointConverter &fpc;
+            int32_t &buffer;
+        };
 
         /// Get or set register content by [] operator.
-        /// TODO this is not going to work with fixed-point conversion!
-        T& operator[](int index)
+        inline proxy operator[](int index)
         {
-          return get(index);
+          return getProxy(index);
         }
 
         /// Set register content by = operator.
-        T& operator=(T rhs)
+        inline proxy operator=(T rhs)
         {
           set(rhs);
-          return get();
+          return getProxy();
         }
 
       protected:
@@ -429,7 +474,13 @@ class VirtualDevice : public DummyDevice
         derived *dev;
 
         /// pointer to fixed point converter
-        //boost::shared_ptr<FixedPointConverter> fpc;
+        FixedPointConverter fpc;
+
+        /// return a proxy object
+        inline proxy getProxy(int index=0) {
+          return proxy(fpc, dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index]);
+        }
+
     };
 
     /// handy name for the int32_t register accessor

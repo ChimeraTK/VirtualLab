@@ -46,20 +46,12 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
 
     virtual void open() {
       VirtualDevice::open();
-    }
-
-    /// on device open: fire the device-open event
-    virtual void open(const std::string &mappingFileName, int perm=O_RDWR, DeviceConfigBase *pConfig=NULL) {
-
-      // open the underlying dummy device
-      VirtualDevice::open(mappingFileName, perm, pConfig);
 
       // send onDeviceOpen event
       theStateMachine.process_event(onDeviceOpen());
 
       // setup registers
       someRegister.open(this,"APP0","SOME_REGISTER");
-
     }
 
     /// on device close: fire the device-close event
@@ -289,7 +281,7 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device.timers.getCurrent() == 30 );
 
   // open the device
-  device.open(TEST_MAPPING_FILE);
+  device.open();
 
   // set first timer and make it fire, then check if in SomeIntermediateState()
   device.myTimer.set(5);
@@ -365,6 +357,24 @@ void VirtualDeviceTest::testRegisterAccessor() {
   device.someRegister[9] = 999;
   BOOST_CHECK( device._barContents[1][0]== 666 );
   BOOST_CHECK( device._barContents[1][9]== 999 );
+  device.someRegister[1] = 111;
+  device.someRegister[2] = 222;
+  device.someRegister[3] = 333;
+  device.someRegister[4] = 444;
+  BOOST_CHECK( device._barContents[1][1]== 111 );
+  BOOST_CHECK( device._barContents[1][2]== 222 );
+  BOOST_CHECK( device._barContents[1][3]== 333 );
+  BOOST_CHECK( device._barContents[1][4]== 444 );
+
+  // test increment and decrement operators
+  BOOST_CHECK( device.someRegister[1]++ == 111 );
+  BOOST_CHECK( device.someRegister[2]-- == 222 );
+  BOOST_CHECK( ++device.someRegister[3] == 334 );
+  BOOST_CHECK( --device.someRegister[4] == 443 );
+  BOOST_CHECK( device._barContents[1][1]== 112 );
+  BOOST_CHECK( device._barContents[1][2]== 221 );
+  BOOST_CHECK( device._barContents[1][3]== 334 );
+  BOOST_CHECK( device._barContents[1][4]== 443 );
 
   // close the device
   device.close();
