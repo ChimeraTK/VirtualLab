@@ -112,7 +112,7 @@ namespace mtca4u { namespace VirtualLab {
   {                                                                                                             \
   RegisterInfoMap::RegisterInfo elem;                                                                           \
     _registerMapping->getRegisterInfo(registerName, elem, registerModule);                                      \
-    if(bar == elem.reg_bar && address >= elem.reg_address && regOffset < elem.reg_address+elem.reg_size) {      \
+    if(bar == elem.reg_bar && address >= elem.reg_address && address < elem.reg_address+elem.reg_size) {        \
       theStateMachine.process_event(eventName ());                                                              \
     }                                                                                                           \
   }
@@ -238,8 +238,8 @@ namespace mtca4u { namespace VirtualLab {
  *  implements all registers defined in the mapping file in memory.
  *  Like this it mimics the real PCIe device.
  *
- *  This class helps implementing dummy devices using a state machine and allows an easy connection with the physics
- *  simulation framework.
+ *  This class helps implementing dummy devices using a state machine and allows an easy connection with the
+ *  virtual lab simulation framework.
  *
  *  The physDummyDevice class is a template of the derived implementation, which means it follows a CRTP
  */
@@ -248,12 +248,20 @@ class VirtualDevice : public DummyDevice
 {
   public:
 
-    VirtualDevice() :
+    // constructor via standard device model decription (as used by the DeviceFactory)
+    VirtualDevice(std::string host, std::string instance, std::list< std::string > parameters) :
+      DummyDevice(host,instance,parameters),
       lastWrittenData(NULL),
       lastWrittenSize(0),
       isOpened(false)
-    {}
+    {
+    }
+
     virtual ~VirtualDevice() {}
+
+    virtual void open() {
+      DummyDevice::open();
+    }
 
     /// on device open: fire the device-open event
     virtual void open(const std::string &mappingFileName, int perm=O_RDWR, DeviceConfigBase *pConfig=NULL) {

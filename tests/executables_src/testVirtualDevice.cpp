@@ -14,6 +14,8 @@ using namespace boost::unit_test_framework;
 using namespace mtca4u;
 using namespace mtca4u::VirtualLab;
 
+#define TEST_MAPPING_FILE "test.mapp"
+
 /**********************************************************************************************************************/
 // forward declaration so we can declare it friend
 // of TestableDummyDevice.
@@ -28,7 +30,8 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
 
     friend class VirtualDeviceTest;
 
-    VirtualTestDevice() :
+    VirtualTestDevice(std::string host, std::string instance, std::list< std::string > parameters) :
+      VirtualDevice(host,instance,parameters),
       someCounter(0),
       myTimer(this),
       mySecondTimer(this),
@@ -40,6 +43,10 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
     }
 
     virtual ~VirtualTestDevice() {}
+
+    virtual void open() {
+      VirtualDevice::open();
+    }
 
     /// on device open: fire the device-open event
     virtual void open(const std::string &mappingFileName, int perm=O_RDWR, DeviceConfigBase *pConfig=NULL) {
@@ -123,7 +130,9 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
 /**********************************************************************************************************************/
 class VirtualDeviceTest {
   public:
-    VirtualDeviceTest() {}
+    VirtualDeviceTest()
+    : device(".",TEST_MAPPING_FILE,std::list<std::string>())
+    {}
 
     /// test the device open and close events
     void testDevOpenClose();
@@ -167,11 +176,11 @@ void VirtualDeviceTest::testDevOpenClose() {
 
   // open and close the device and check the states
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
-  device.open("test.mapp");
+  device.open();
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 1 );
   device.close();
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
-  device.open("test.mapp");
+  device.open();
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 1 );
   device.close();
   BOOST_CHECK( device.theStateMachine.current_state()[0] == 0 );
@@ -280,7 +289,7 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device.timers.getCurrent() == 30 );
 
   // open the device
-  device.open("test.mapp");
+  device.open(TEST_MAPPING_FILE);
 
   // set first timer and make it fire, then check if in SomeIntermediateState()
   device.myTimer.set(5);
@@ -315,7 +324,7 @@ void VirtualDeviceTest::testRegisterAccessor() {
   std::cout << "testRegisterAccessor" << std::endl;
 
   // open the device
-  device.open("test.mapp");
+  device.open();
 
   // test get()
   device._barContents[1][0] = 0;
