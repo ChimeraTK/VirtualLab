@@ -23,7 +23,7 @@
 #include <boost/msm/front/state_machine_def.hpp>
 #include <boost/msm/front/euml/euml.hpp>
 
-#include <MtcaMappedDevice/DummyDevice.h>
+#include <MtcaMappedDevice/DummyBackend.h>
 #include <MtcaMappedDevice/FixedPointConverter.h>
 
 #include "timer.h"
@@ -244,13 +244,13 @@ namespace mtca4u { namespace VirtualLab {
  *  The physDummyDevice class is a template of the derived implementation, which means it follows a CRTP
  */
 template<class derived>
-class VirtualDevice : public DummyDevice
+class VirtualDevice : public DummyBackend
 {
   public:
 
     // constructor via standard device model decription (as used by the DeviceFactory)
     VirtualDevice(std::string host, std::string instance, std::list< std::string > parameters) :
-      DummyDevice(host,instance,parameters),
+      DummyBackend(host,instance,parameters),
       lastWrittenData(NULL),
       lastWrittenSize(0),
       isOpened(false)
@@ -260,21 +260,21 @@ class VirtualDevice : public DummyDevice
     virtual ~VirtualDevice() {}
 
     virtual void open() {
-      DummyDevice::open();
+      DummyBackend::open();
     }
 
     /// on device open: fire the device-open event
     virtual void open(const std::string &mappingFileName, int perm=O_RDWR, DeviceConfigBase *pConfig=NULL) {
       if(isOpened) throw DummyDeviceException("Device is already opened.", DummyDeviceException::ALREADY_OPEN);
       isOpened = true;
-      DummyDevice::open(mappingFileName, perm, pConfig);
+      DummyBackend::open(mappingFileName, perm, pConfig);
     }
 
     /// on device close: fire the device-close event
     virtual void close() {
       if(!isOpened) throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
       isOpened = false;
-      DummyDevice::close();
+      DummyBackend::close();
     }
 
     /// override writeArea to fire the events
@@ -284,7 +284,7 @@ class VirtualDevice : public DummyDevice
       lastWrittenSize = sizeInBytes;
 
       // perform the actual write
-      DummyDevice::write(bar, address, data, sizeInBytes);
+      DummyBackend::write(bar, address, data, sizeInBytes);
 
       // trigger events
       regWriteEvents(bar,address,data,sizeInBytes);
@@ -296,7 +296,7 @@ class VirtualDevice : public DummyDevice
       regReadEvents(bar, address, data, sizeInBytes);
 
       // perform the actual write
-      DummyDevice::read(bar, address, data, sizeInBytes);
+      DummyBackend::read(bar, address, data, sizeInBytes);
     }
 
   protected:
