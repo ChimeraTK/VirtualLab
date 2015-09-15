@@ -27,6 +27,7 @@
 #include <MtcaMappedDevice/FixedPointConverter.h>
 
 #include "timer.h"
+#include "DummyRegister.h"
 
 using namespace boost::msm::front::euml;
 namespace msm = boost::msm;
@@ -83,6 +84,20 @@ namespace mtca4u { namespace VirtualLab {
       template <class Event,class FSM>                                                                          \
       void on_exit(Event const&,FSM&) { std::cout << "Leaving state: " << #name << std::endl; }                 \
   };
+
+///
+/// Declare a dummy register accessor for single-word or 1D-array registers.
+/// UserType is the data type the data should be accessed by. The conversion is handled internally using the
+/// FixedPointConverter.
+///
+#define DECLARE_REGISTER(UserType, name) DummyRegister<UserType, dummyDeviceType> name;
+
+///
+/// Declare a dummy register accessor for multiplexed 2D-array registers.
+/// UserType is the data type the data should be accessed by. The conversion is handled internally using the
+/// FixedPointConverter.
+///
+#define DECLARE_MUXED_REGISTER(UserType, name) DummyMultiplexedRegister<UserType, dummyDeviceType> name;
 
 ///
 /// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events
@@ -373,118 +388,12 @@ class VirtualDevice : public DummyBackend
     /// flag if device currenty opened
     bool isOpened;
 
-    /*********************************************************************************************************************/
-    /// register accessors (should go into DummyDevice class later?)
-    template<typename T>
-    class dummyRegister {
-      public:
+    /// register accessors must be friends to access the map and the registers
+    template<typename T, class myDerived>
+    friend class DummyRegister;
 
-        /// "Open" the register: obtain the register information from the mapping file.
-        /// Call this function in the overloaded openDev() function.
-        void open(derived *_dev, std::string module, std::string name)
-        {
-          dev = _dev;
-          dev->_registerMapping->getRegisterInfo(name, elem, module);
-          fpc =  FixedPointConverter(elem.reg_width, elem.reg_frac_bits, elem.reg_signed);
-        }
-
-        /// Get register content by index.
-        inline T get(int index=0)
-        {
-          uint32_t v = dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index];
-          return fpc.template toCooked<T>(v);
-        }
-
-        /// Set register content by index.
-        inline void set(T value, int index=0)
-        {
-          uint32_t v = fpc.toRaw(value);
-          dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index] = v;
-        }
-
-        /// Temporary proxy class.
-        /// Will be returned in place of l.h.s. references for fixed-point converted data types.
-        class proxy {
-          public:
-            proxy(FixedPointConverter &_fpc, int32_t &_buffer) : fpc(_fpc), buffer(_buffer) {}
-
-            /// Implicit type conversion to user type T.
-            /// This covers already a lot of operations like arithmetics and comparison
-            inline operator T() {
-              return fpc.template toCooked<T>(buffer);
-            }
-
-            /// assignment operator
-            inline proxy operator=(T rhs)
-            {
-              buffer = fpc.toRaw(rhs);
-              return *this;
-            }
-
-            /// prefixed increment operator
-            inline proxy operator++() {
-              buffer = fpc.toRaw( fpc.template toCooked<T>(buffer) + 1 );
-              return *this;
-            }
-
-            /// prefixed decrement operator
-            inline proxy operator--() {
-              buffer = fpc.toRaw( fpc.template toCooked<T>(buffer) - 1 );
-              return *this;
-            }
-
-            /// postfixed increment operator
-            inline T operator++(int) {
-              T v = fpc.template toCooked<T>(buffer);
-              buffer = fpc.toRaw( v + 1 );
-              return v;
-            }
-
-            /// postfixed decrement operator
-            inline T operator--(int) {
-              T v = fpc.template toCooked<T>(buffer);
-              buffer = fpc.toRaw( v - 1 );
-              return v;
-            }
-
-          private:
-            FixedPointConverter &fpc;
-            int32_t &buffer;
-        };
-
-        /// Get or set register content by [] operator.
-        inline proxy operator[](int index)
-        {
-          return getProxy(index);
-        }
-
-        /// Set register content by = operator.
-        inline proxy operator=(T rhs)
-        {
-          set(rhs);
-          return getProxy();
-        }
-
-      protected:
-
-        /// register map information
-        RegisterInfoMap::RegisterInfo elem;
-
-        /// pointer to VirtualDevice
-        derived *dev;
-
-        /// pointer to fixed point converter
-        FixedPointConverter fpc;
-
-        /// return a proxy object
-        inline proxy getProxy(int index=0) {
-          return proxy(fpc, dev->_barContents[elem.reg_bar][elem.reg_address/sizeof(int32_t) + index]);
-        }
-
-    };
-
-    /// handy name for the int32_t register accessor
-    typedef dummyRegister<int32_t> intRegister;
+    template<typename T, class myDerived>
+    friend class DummyMultiplexedRegister;
 
 };
 
