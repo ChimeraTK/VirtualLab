@@ -1,4 +1,5 @@
 #include <tuple>
+#include <algorithm>
 #include <math.h>
 #include <boost/test/included/unit_test.hpp>
 #include <boost/lambda/lambda.hpp>
@@ -471,7 +472,7 @@ void VirtualDeviceTest::testMuxedRegisterAccessor() {
   BOOST_CHECK( device._barContents[0xD][pitch/4+9] == 222 );
   BOOST_CHECK( device._barContents[0xD][pitch/4+12] == 555 );
 
-  // fill the rest of the register (has 1048576 elements in total in the mapp file)
+  // fill the rest of the register (has 1048576 elements in total in the mapp file, thus 1048576/16 per channel)
   for(int i = 2; i < 1048576/16; i++) {
     mixedReg.cooked.r0 = i + 0;
     mixedReg.cooked.r1 = i + 1;
@@ -546,6 +547,69 @@ void VirtualDeviceTest::testMuxedRegisterAccessor() {
       message << "someMuxedRegister[" << k << "][" << i << "] == " << device.someMuxedRegister[k][i] << " but " << expectedValue << " expected.";
       BOOST_CHECK_MESSAGE( device.someMuxedRegister[k][i] == expectedValue, message.str() );
     }
+  }
+
+  // test writing by [][] operator
+  device.someMuxedRegister[0][0] = 666;
+  device.someMuxedRegister[1][0] = 999;
+  device.someMuxedRegister[2][0] = 222;
+  device.someMuxedRegister[3][0] = -111;
+  device.someMuxedRegister[4][0] = 0;
+  device.someMuxedRegister[5][0] = 555;
+  device.someMuxedRegister[6][0] = 666;
+  device.someMuxedRegister[7][0] = 777;
+  device.someMuxedRegister[8][0] = 888;
+  device.someMuxedRegister[9][0] = 999;
+  device.someMuxedRegister[10][0] = 1111;
+  device.someMuxedRegister[11][0] = 2222;
+  device.someMuxedRegister[12][0] = 3333;
+  device.someMuxedRegister[13][0] = 4444;
+  device.someMuxedRegister[14][0] = 5555;
+  device.someMuxedRegister[15][0] = 6666;
+
+  for(int i=1; i<1048576/16; i++) {
+    for(int k=0; k<16; k++) {
+      device.someMuxedRegister[k][i] = 10*k + i;
+    }
+  }
+
+  for(int k=0; k<13; k++) mixedReg.raw[k] = device._barContents[0xD][k];
+  BOOST_CHECK( mixedReg.cooked.r0 == 666 );
+  BOOST_CHECK( mixedReg.cooked.r1 == 999 );
+  BOOST_CHECK( mixedReg.cooked.r2 == 222 );
+  BOOST_CHECK( mixedReg.cooked.r3 == -111 );
+  BOOST_CHECK( mixedReg.cooked.r4 == 0 );
+  BOOST_CHECK( mixedReg.cooked.r5 == 555 );
+  BOOST_CHECK( mixedReg.cooked.r6 == 666 );
+  BOOST_CHECK( mixedReg.cooked.r7 == 777 );
+  BOOST_CHECK( mixedReg.cooked.r8 == 888 );
+  BOOST_CHECK( mixedReg.cooked.r9 == 999 );
+  BOOST_CHECK( mixedReg.cooked.r10 == 1111 );
+  BOOST_CHECK( mixedReg.cooked.r11 == 2222 );
+  BOOST_CHECK( mixedReg.cooked.r12 == 3333 );
+  BOOST_CHECK( mixedReg.cooked.r13 == 4444 );
+  BOOST_CHECK( mixedReg.cooked.r14 == 5555 );
+  BOOST_CHECK( mixedReg.cooked.r15 == 6666 );
+
+
+  for(int i=1; i<1048576/16; i++) {
+    for(int k=0; k<13; k++) mixedReg.raw[k] = device._barContents[0xD][i*(pitch/4)+k];
+    BOOST_CHECK( mixedReg.cooked.r0 == 10*0 + i );
+    BOOST_CHECK( mixedReg.cooked.r1 == std::min( 10*1 + i, 32767) );
+    BOOST_CHECK( mixedReg.cooked.r2 == std::min( 10*2 + i, 32767) );
+    BOOST_CHECK( mixedReg.cooked.r3 == std::min( 10*3 + i, 127) );
+    BOOST_CHECK( mixedReg.cooked.r4 == std::min( 10*4 + i, 1) );
+    BOOST_CHECK( mixedReg.cooked.r5 == 10*5 + i );
+    BOOST_CHECK( mixedReg.cooked.r6 == std::min( 10*6 + i, 32767) );
+    BOOST_CHECK( mixedReg.cooked.r7 == 10*7 + i );
+    BOOST_CHECK( mixedReg.cooked.r8 == 10*8 + i );
+    BOOST_CHECK( mixedReg.cooked.r9 == 10*9 + i );
+    BOOST_CHECK( mixedReg.cooked.r10 == 10*10 + i );
+    BOOST_CHECK( mixedReg.cooked.r11 == 10*11 + i );
+    BOOST_CHECK( mixedReg.cooked.r12 == 10*12 + i );
+    BOOST_CHECK( mixedReg.cooked.r13 == 10*13 + i );
+    BOOST_CHECK( mixedReg.cooked.r14 == 10*14 + i );
+    BOOST_CHECK( mixedReg.cooked.r15 == (unsigned int) (10*15 + i) );
   }
 
   std::cerr << std::flush;
