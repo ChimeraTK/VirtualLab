@@ -37,26 +37,26 @@ namespace mtca4u { namespace VirtualLab {
         return *this;
       }
 
-      /// prefixed increment operator
+      /// pre-increment operator
       inline VirtualRegisterProxy<T> operator++() {
         T v = fpc.template toCooked<T>(buffer);
         return operator=( v + 1 );
       }
 
-      /// prefixed decrement operator
+      /// pre-decrement operator
       inline VirtualRegisterProxy<T> operator--() {
         T v = fpc.template toCooked<T>(buffer);
         return operator=( v - 1 );
       }
 
-      /// postfixed increment operator
+      /// post-increment operator
       inline T operator++(int) {
         T v = fpc.template toCooked<T>(buffer);
         operator=( v + 1 );
         return v;
       }
 
-      /// postfixed decrement operator
+      /// post-decrement operator
       inline T operator--(int) {
         T v = fpc.template toCooked<T>(buffer);
         operator=( v - 1 );
