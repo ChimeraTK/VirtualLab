@@ -17,19 +17,16 @@
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/include/at_key.hpp>
 
-#include <boost/bind.hpp>
-#include <boost/random/uniform_int.hpp>
 #include <boost/msm/back/state_machine.hpp>
 #include <boost/msm/front/state_machine_def.hpp>
 #include <boost/msm/front/euml/euml.hpp>
 
 #include <MtcaMappedDevice/DummyBackend.h>
-#include <MtcaMappedDevice/FixedPointConverter.h>
+#include <MtcaMappedDevice/DummyRegisterAccessor.h>
 
 #include "timer.h"
-#include "DummyRegister.h"
 
-using namespace boost::msm::front::euml;
+using namespace boost::msm::front::euml;        // this is required when using boost::msm
 namespace msm = boost::msm;
 namespace mpl = boost::mpl;
 
@@ -90,14 +87,14 @@ namespace mtca4u { namespace VirtualLab {
 /// UserType is the data type the data should be accessed by. The conversion is handled internally using the
 /// FixedPointConverter.
 ///
-#define DECLARE_REGISTER(UserType, name) DummyRegister<UserType, dummyDeviceType> name;
+#define DECLARE_REGISTER(UserType, name) mtca4u::DummyRegisterAccessor<UserType> name;
 
 ///
 /// Declare a dummy register accessor for multiplexed 2D-array registers.
 /// UserType is the data type the data should be accessed by. The conversion is handled internally using the
 /// FixedPointConverter.
 ///
-#define DECLARE_MUXED_REGISTER(UserType, name) DummyMultiplexedRegister<UserType, dummyDeviceType> name;
+#define DECLARE_MUXED_REGISTER(UserType, name) mtca4u::DummyMultiplexedRegisterAccessor<UserType> name;
 
 ///
 /// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events
@@ -267,30 +264,11 @@ class VirtualDevice : public DummyBackend
     VirtualDevice(std::string host, std::string instance, std::list< std::string > parameters) :
       DummyBackend(host,instance,parameters),
       lastWrittenData(NULL),
-      lastWrittenSize(0),
-      isOpened(false)
+      lastWrittenSize(0)
     {
     }
 
     virtual ~VirtualDevice() {}
-
-    virtual void open() {
-      DummyBackend::open();
-    }
-
-    /// on device open: fire the device-open event
-    virtual void open(const std::string &mappingFileName, int perm=O_RDWR, DeviceConfigBase *pConfig=NULL) {
-      if(isOpened) throw DummyDeviceException("Device is already opened.", DummyDeviceException::ALREADY_OPEN);
-      isOpened = true;
-      DummyBackend::open(mappingFileName, perm, pConfig);
-    }
-
-    /// on device close: fire the device-close event
-    virtual void close() {
-      if(!isOpened) throw DummyDeviceException("Device is already closed.", DummyDeviceException::ALREADY_CLOSED);
-      isOpened = false;
-      DummyBackend::close();
-    }
 
     /// override writeArea to fire the events
     virtual void write(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
@@ -384,16 +362,6 @@ class VirtualDevice : public DummyBackend
     /// last written data (into any register) and its size. Will be used in guard conditions.
     int32_t const *lastWrittenData;
     size_t lastWrittenSize;
-
-    /// flag if device currenty opened
-    bool isOpened;
-
-    /// register accessors must be friends to access the map and the registers
-    template<typename T, class myDerived>
-    friend class DummyRegister;
-
-    template<typename T, class myDerived>
-    friend class DummyMultiplexedRegister;
 
 };
 
