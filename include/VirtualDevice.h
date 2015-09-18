@@ -30,8 +30,6 @@ using namespace boost::msm::front::euml;        // this is required when using b
 namespace msm = boost::msm;
 namespace mpl = boost::mpl;
 
-namespace mtca4u { namespace VirtualLab {
-
 ///
 /// Declare an event. Use instead of BOOST_MSM_EUML_EVENT, as we must not create instances for the events as well.
 ///
@@ -44,6 +42,7 @@ namespace mtca4u { namespace VirtualLab {
 #define DECLARE_STATE(name)                                                                                     \
   class name : public msm::front::state<> , public msm::front::euml::euml_state<name> {};
 
+/*
 ///
 /// Declare a state with actions. The second arg decl can be used to define onEntry and onExit actions with the macros
 /// STATE_ON_ENTRY and STATE_ON_EXIT.
@@ -69,6 +68,7 @@ namespace mtca4u { namespace VirtualLab {
 #define STATE_ON_EXIT                                                                                           \
    template <class Event,class FSM>                                                                             \
    void on_exit(Event const&,FSM&)
+*/
 
 ///
 /// Declare a logging state. Entry and exit of this state will be looged to std::cout.
@@ -97,22 +97,24 @@ namespace mtca4u { namespace VirtualLab {
 #define DECLARE_MUXED_REGISTER(UserType, name) mtca4u::DummyMultiplexedRegisterAccessor<UserType> name;
 
 ///
-/// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events
+/// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events.
+/// The table must be terminated with END_WRITEEVENT_TABLE.
 ///
-#define WRITE_EVENT_TABLE(table)                                                                                \
+#define WRITEEVENT_TABLE                                                                                        \
   void regWriteEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {                 \
-    (void)bar; (void)address; (void)data; (void)sizeInBytes;                                                    \
-    table                                                                                                       \
-  }
+    (void)bar; (void)address; (void)data; (void)sizeInBytes;
+
+#define END_WRITEEVENT_TABLE }
 
 ///
 /// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for read events
+/// The table must be terminated with END_READEVENT_TABLE.
 ///
-#define READ_EVENT_TABLE(table)                                                                                 \
+#define READEVENT_TABLE(table)                                                                                  \
   void regReadEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {                  \
-    (void)bar; (void)address; (void)data; (void)sizeInBytes;                                                    \
-    table                                                                                                       \
-  }
+    (void)bar; (void)address; (void)data; (void)sizeInBytes;
+
+#define END_READEVENT_TABLE }
 
 ///
 /// Connect events with register names. The first argument eventName is the name of an event previously
@@ -131,10 +133,10 @@ namespace mtca4u { namespace VirtualLab {
 
 ///
 /// Declare a guard condition on the value of a register. The resulting guard condition can be used on an event
-/// defined with the CONNECT_REGISTER_EVENT macro. The first argument guardName is the name of the resulting guard class
-/// and the second argument will be parsed as the guard condition (standard C++ syntax). Inside the condition, the
-/// variable "value" can be used which contains the value of the register written in the event (type: int32_t, always the
-/// first word written).
+/// defined with the CONNECT_REGISTER_EVENT macro. The first argument guardName is the name of the resulting guard
+/// class and the second argument will be parsed as the guard condition (standard C++ syntax). Inside the condition,
+/// the variable "value" can be used which contains the value of the register written in the event (type: int32_t,
+/// always the first word written).
 ///
 #define DECLARE_REGISTER_GUARD(guardName, condition)                                                            \
     class guardName :  msm::front::euml::euml_action<guardName>                                                 \
@@ -154,10 +156,11 @@ namespace mtca4u { namespace VirtualLab {
     };
 
 ///
-/// Declare a guard condition. The first argument guardName is the name of the resulting guard class
-/// and the second argument contains the code. The code must contain a return statement returning a boolean.
+/// Declare a guard condition. The argument guardName is the name of the resulting guard class.
+/// The code must follow this macro, contain a return statement returning a boolean and has to be terminated
+/// with END_DECLARE_GUARD.
 ///
-#define DECLARE_GUARD(guardName, code)                                                                          \
+#define DECLARE_GUARD(guardName)                                                                                \
     class guardName :  msm::front::euml::euml_action<guardName>                                                 \
     {                                                                                                           \
       public:                                                                                                   \
@@ -167,15 +170,15 @@ namespace mtca4u { namespace VirtualLab {
         bool operator()(Evt const& ,Fsm& fsm,SourceState&,TargetState& )                                        \
         {                                                                                                       \
             dummyDeviceType *dev = fsm.dev;                                                                     \
-            (void)dev;                                                                                          \
-            code                                                                                                \
-        }                                                                                                       \
-    };
+            (void)dev;
+
+#define END_DECLARE_GUARD }};
 
 ///
-/// declare an action with arbitrary code. The second argument contains the code.
+/// Declare an action with arbitrary code. The argument actionName is the name of the resulting action class.
+/// The code must follow this macro and has to be terminated with END_DECLARE_ACTION.
 ///
-#define DECLARE_ACTION(actionName, code)                                                                        \
+#define DECLARE_ACTION(actionName)                                                                              \
     class actionName :  msm::front::euml::euml_action<actionName>                                               \
     {                                                                                                           \
       public:                                                                                                   \
@@ -185,10 +188,9 @@ namespace mtca4u { namespace VirtualLab {
         void operator()(Evt const& ,Fsm& fsm,SourceState&,TargetState& )                                        \
         {                                                                                                       \
             dummyDeviceType *dev = fsm.dev;                                                                     \
-            (void)dev;                                                                                          \
-            code                                                                                                \
-        }                                                                                                       \
-    };
+            (void)dev;
+
+#define END_DECLARE_ACTION }};
 
 ///
 /// Declare a timer with a given name. Will fire the given event.
@@ -216,7 +218,7 @@ namespace mtca4u { namespace VirtualLab {
     name ## _ name;
 
 ///
-/// declare a state machine.
+/// Declare a state machine.
 /// dummyDeviceType is the class name of the physDummyDevice implementation the state machine will be used in
 /// stateMachineName is the name of the state machine itself. Several types will be defined based on this names with
 /// one or more trailing underscores.
@@ -245,6 +247,33 @@ namespace mtca4u { namespace VirtualLab {
     };                                                                                                          \
     typedef msm::back::state_machine<stateMachineName ## _> stateMachineName;
 
+///
+/// Declare the main state machine. This is just like DECLARE_STATE_MACHINE but with a fixed name "mainStateMachine".
+/// Also the state machine will be instantiated under the name "theStateMachine", as expected by other parts of this
+/// framework.
+///
+#define DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)                                               \
+    DECLARE_STATE_MACHINE(mainStateMachine, initialState, transitionTable)                                      \
+    mainStateMachine theStateMachine;
+
+///
+/// Declare the constructor of the VirtualLabBackend. The first argument must be the class name. The other arguments
+/// must be the list of member initialisers, the code of the cunstructor follows this macro and must be terminated
+/// with END_CONSTRUCTOR, even if no code is put into the constructor.
+///
+#define CONSTRUCTOR(name,...)                                                                                   \
+    name(std::string host, std::string instance, std::list< std::string > parameters) :                         \
+    VirtualLabBackend(host,instance,parameters),                                                                \
+      ## __VA_ARGS__ ,                                                                                          \
+      theStateMachine(this)                                                                                     \
+    {
+
+#define END_CONSTRUCTOR }
+
+
+
+namespace mtca4u { namespace VirtualLab {
+
 /*********************************************************************************************************************/
 /** The dummy device opens a mapping file instead of a device, and
  *  implements all registers defined in the mapping file in memory.
@@ -256,19 +285,21 @@ namespace mtca4u { namespace VirtualLab {
  *  The physDummyDevice class is a template of the derived implementation, which means it follows a CRTP
  */
 template<class derived>
-class VirtualDevice : public DummyBackend
+class VirtualLabBackend : public DummyBackend
 {
   public:
 
     // constructor via standard device model decription (as used by the DeviceFactory)
-    VirtualDevice(std::string host, std::string instance, std::list< std::string > parameters) :
+    VirtualLabBackend(std::string host, std::string instance, std::list< std::string > parameters) :
       DummyBackend(host,instance,parameters),
       lastWrittenData(NULL),
       lastWrittenSize(0)
     {
+      // start the main state machine
+      static_cast<derived&>(*this).theStateMachine.start();
     }
 
-    virtual ~VirtualDevice() {}
+    virtual ~VirtualLabBackend() {}
 
     /// override writeArea to fire the events
     virtual void write(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {

@@ -25,38 +25,30 @@ class VirtualDeviceTest;
 /**********************************************************************************************************************/
 /** The VirtualTestDevice is a VirtualDevice implementation to test the framework
  */
-class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
+class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 {
   public:
 
     friend class VirtualDeviceTest;
 
-    VirtualTestDevice(std::string host, std::string instance, std::list< std::string > parameters) :
-      VirtualDevice(host,instance,parameters),
+    CONSTRUCTOR(VirtualTestDevice,
       someCounter(0),
       someRegister(this,"APP0","SOME_REGISTER"),
       someMuxedRegister(this,"APP0","DAQ0_ADCA"),
       myTimer(this),
       mySecondTimer(this),
       timers__(this),
-      timers(this),
-      theStateMachine(this)
-    {
-      theStateMachine.start();
-    }
+      timers(this) )
+    END_CONSTRUCTOR
 
-    virtual ~VirtualTestDevice() {}
-
+    // Overload open and close to send events on device open and close. For a real VirtualLabBackend, this should
+    // usually not be done, as the state of the device driver should not be part of the state machine.
     virtual void open() {
-      VirtualDevice::open();
-
-      // send onDeviceOpen event
+      VirtualLabBackend::open();
       theStateMachine.process_event(onDeviceOpen());
     }
-
-    /// on device close: fire the device-close event
     virtual void close() {
-      VirtualDevice::close();
+      VirtualLabBackend::close();
       theStateMachine.process_event(onDeviceClose());
     }
 
@@ -74,10 +66,10 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
     DECLARE_EVENT(goCounting)
 
     /// counting action: increase counter and set timer again
-    DECLARE_ACTION(countingAction,
+    DECLARE_ACTION(countingAction)
         dev->someCounter++;
         dev->myTimer.set(1);
-    )
+    END_DECLARE_ACTION
 
     /// our counter for the counting action
     int someCounter;
@@ -100,7 +92,7 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
     timers_ timers;
 
     /// define the state machine structure
-    DECLARE_STATE_MACHINE(mainStateMachine, DevClosed(), (
+    DECLARE_MAIN_STATE_MACHINE(DevClosed(), (
       // =======================================================================================================
       // open and close the device
       DevClosed() + onDeviceOpen() == DevOpen(),
@@ -117,7 +109,6 @@ class VirtualTestDevice : public VirtualDevice<VirtualTestDevice>
       CountingState() + onTimer() / countingAction()
     ))
 
-    mainStateMachine theStateMachine;
 };
 
 /**********************************************************************************************************************/
