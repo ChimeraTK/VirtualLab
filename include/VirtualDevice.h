@@ -270,6 +270,11 @@ namespace mpl = boost::mpl;
 
 #define END_CONSTRUCTOR }
 
+///
+/// Initialise a sub-state machine. This should be called inside of the constructor.
+///
+#define INIT_SUB_STATE_MACHINE(name)                                                                            \
+    theStateMachine.get_state< name * >()->setDummyDevice(this);
 
 
 namespace mtca4u { namespace VirtualLab {
