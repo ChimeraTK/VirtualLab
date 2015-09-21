@@ -130,7 +130,7 @@ class timerGroup {
     bool advance(double tval) {
       if(tval < 0) return false;
       current += tval;
-      bool hasFired;
+      bool hasFired = false;
       do {
         double tstep = fmin(tval, getRemaining());
         boost::fusion::for_each(*timers, advanceTimer(tstep,hasFired));
