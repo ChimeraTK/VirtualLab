@@ -8,7 +8,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include "VirtualDevice.h"
+#include "VirtualLabBackend.h"
 
 using namespace boost::unit_test_framework;
 
