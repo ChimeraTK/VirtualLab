@@ -102,10 +102,10 @@ namespace mtca4u { namespace VirtualLab {
 /// This implementation is done for VirtualDevices using the DECLARE_TIMER_GROUP macro.
 ///
 template<class timerTypes>
-class timerGroup {
+class TimerGroup {
   public:
-    timerGroup() : findRemainingByName_index(0),timers(NULL),current(0) {}
-    ~timerGroup() {}
+    TimerGroup() : findRemainingByName_index(0),timers(NULL),current(0) {}
+    ~TimerGroup() {}
 
     /// Get remaining time until the next timer fires, or -1 if no timer has been set.
     double getRemaining() {
@@ -175,7 +175,7 @@ class timerGroup {
     /// functor to find the remaining time of a given timer
     int findRemainingByName_index;
     struct findRemainingByName {
-        findRemainingByName(timerGroup<timerTypes> &_group, std::string &_name, double &_remaining)
+        findRemainingByName(TimerGroup<timerTypes> &_group, std::string &_name, double &_remaining)
         : group(_group),
           name(_name),
           remaining(_remaining)
@@ -188,7 +188,7 @@ class timerGroup {
           remaining = t.getRemaining();
         }
       private:
-        timerGroup<timerTypes> &group;
+        TimerGroup<timerTypes> &group;
         std::string &name;
         double &remaining;
     };

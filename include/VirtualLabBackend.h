@@ -24,7 +24,7 @@
 #include <MtcaMappedDevice/DummyBackend.h>
 #include <MtcaMappedDevice/DummyRegisterAccessor.h>
 
-#include "timer.h"
+#include "TimerGroup.h"
 
 using namespace boost::msm::front::euml;        // this is required when using boost::msm
 namespace msm = boost::msm;
@@ -195,7 +195,7 @@ namespace mpl = boost::mpl;
 ///
 /// Declare a timer with a given name. Will fire the given event.
 ///
-#define DECLARE_TIMER(name,event) timer<event> name;
+#define DECLARE_TIMER(name,event) Timer<event> name;
 
 ///
 /// Declare a timer group with a given name. The additional arguments must be the timers part of
@@ -203,10 +203,10 @@ namespace mpl = boost::mpl;
 ///
 #define DECLARE_TIMER_GROUP(name, ...)                                                                          \
     typedef boost::fusion::vector< DECLARE_TIMER_GROUP_DECLARE_VECTOR(__VA_ARGS__) > name ## __;                \
-    class name ## _: public timerGroup<name ## __> {                                                            \
+    class name ## _: public TimerGroup<name ## __> {                                                            \
       public:                                                                                                   \
         name ## _(dummyDeviceType *_dev)                                                                        \
-        : timerGroup(),                                                                                         \
+        : TimerGroup(),                                                                                         \
           dev(_dev)                                                                                             \
         {                                                                                                       \
           DECLARE_TIMER_GROUP_MAKEMAP(__VA_ARGS__)                                                              \
@@ -343,11 +343,11 @@ class VirtualLabBackend : public DummyBackend
       (void) bar; (void) address; (void) data; (void) sizeInBytes;
     };
 
-    /// VirtualDevice::timer class
+    /// VirtualDevice::Timer class
     template<class timerEvent>
-    class timer {
+    class Timer {
       public:
-        timer(derived *_dev) : dev(_dev),request(-1),current(0) {}
+        Timer(derived *_dev) : dev(_dev),request(-1),current(0) {}
 
         /// Set the timer to fire in tval milliseconds
         void set(double tval) {
