@@ -10,7 +10,7 @@ set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_M
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
 
 #Moderate version of the compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized -std=c++0x")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized -std=c++0x -O3")
 
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
@@ -18,7 +18,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 # linker flags
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
 
-FIND_PACKAGE(MtcaMappedDevice 00.17 REQUIRED)
+FIND_PACKAGE(MtcaMappedDevice 00.18 REQUIRED)
 include_directories(SYSTEM ${MtcaMappedDevice_INCLUDE_DIRS})
 
 FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
@@ -57,6 +57,14 @@ if(TESTING_IS_ENABLED)
     target_link_libraries(${excutableName} ${MtcaMappedDevice_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
     add_test(${excutableName} ${excutableName})
   endforeach( testExecutableSrcFile )
+
+  aux_source_directory(${CMAKE_SOURCE_DIR}/performance_tests perftestExecutables)
+  foreach( perftestExecutableSrcFile ${perftestExecutables})
+    #NAME_WE means the base name without path and (longest) extension
+    get_filename_component(excutableName ${perftestExecutableSrcFile} NAME_WE)
+    add_executable(${excutableName} ${perftestExecutableSrcFile})
+    target_link_libraries(${excutableName} ${MtcaMappedDevice_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
+  endforeach( perftestExecutableSrcFile )
 
   #The make coverage command is only available in debug mode
   IF(CMAKE_BUILD_TYPE STREQUAL "Debug")

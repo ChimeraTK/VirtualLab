@@ -19,3 +19,4 @@ APP0.SEQUENCE_DAQ0_ADCA_13                                  1           40      
 APP0.SEQUENCE_DAQ0_ADCA_14                                  1           44            4     13     32      0    1
 APP0.SEQUENCE_DAQ0_ADCA_15                                  1           48            4     13     32      0    0
 
+PERFTEST.BIGPLAIN                                   100000000            0    400000000      2     32      0    1
