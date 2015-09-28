@@ -73,10 +73,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
 int main() {
 
-
-  std::list<std::string>       para;
-  para.push_back(std::string("test.mapp"));
-  VirtualTestDevice     dev(".","virtualDevice",para);
+  VirtualTestDevice     dev("test.mapp");
 
   dev.open();
 

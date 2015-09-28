@@ -116,9 +116,7 @@ class VirtualDeviceTest {
   public:
     VirtualDeviceTest()
     {
-      std::list<std::string> parameter;
-      parameter.push_back(TEST_MAPPING_FILE);
-      device = boost::shared_ptr<VirtualTestDevice>( new VirtualTestDevice(".","virtualDevice",parameter) );
+      device = boost::shared_ptr<VirtualTestDevice>( new VirtualTestDevice(TEST_MAPPING_FILE) );
     }
 
     /// test the device open and close events

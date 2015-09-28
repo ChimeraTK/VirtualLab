@@ -18,8 +18,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 # linker flags
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
 
-FIND_PACKAGE(MtcaMappedDevice 00.18 REQUIRED)
-include_directories(SYSTEM ${MtcaMappedDevice_INCLUDE_DIRS})
+FIND_PACKAGE(mtca4u-deviceaccess 00.00 REQUIRED)
+include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
 
 FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
 
@@ -54,7 +54,7 @@ if(TESTING_IS_ENABLED)
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${testExecutableSrcFile})
-    target_link_libraries(${excutableName} ${MtcaMappedDevice_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
+    target_link_libraries(${excutableName} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
     add_test(${excutableName} ${excutableName})
   endforeach( testExecutableSrcFile )
 
@@ -63,7 +63,7 @@ if(TESTING_IS_ENABLED)
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(excutableName ${perftestExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${perftestExecutableSrcFile})
-    target_link_libraries(${excutableName} ${MtcaMappedDevice_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
+    target_link_libraries(${excutableName} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
   endforeach( perftestExecutableSrcFile )
 
   #The make coverage command is only available in debug mode
@@ -82,7 +82,7 @@ endif(TESTING_IS_ENABLED)
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
-target_link_libraries(${PROJECT_NAME} ${MtcaMappedDevice_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES})
 
 #configure a header file which contains the version information for use in C++
 #configure_file(cmake/version.h.in "${PROJECT_BINARY_DIR}/version.h" @ONLY)

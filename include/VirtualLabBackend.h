@@ -21,8 +21,8 @@
 #include <boost/msm/front/state_machine_def.hpp>
 #include <boost/msm/front/euml/euml.hpp>
 
-#include <MtcaMappedDevice/DummyBackend.h>
-#include <MtcaMappedDevice/DummyRegisterAccessor.h>
+#include <mtca4u/DummyBackend.h>
+#include <mtca4u/DummyRegisterAccessor.h>
 
 #include "TimerGroup.h"
 
@@ -234,13 +234,8 @@ namespace mpl = boost::mpl;
                                            stateMachineName ## __)                                              \
     class stateMachineName ## _ : public stateMachineName ## __  {                                              \
       public:                                                                                                   \
-        stateMachineName ## _(dummyDeviceType *_dev)                                                            \
-        : stateMachineName ## __(),                                                                             \
-          dev(_dev)                                                                                             \
-        {}                                                                                                      \
         stateMachineName ## _()                                                                                 \
-          : stateMachineName ## __(),                                                                           \
-          dev(NULL)                                                                                             \
+          : stateMachineName ## __()                                                                            \
         {}                                                                                                      \
         void setDummyDevice(dummyDeviceType *_dev) {dev = _dev;}                                                \
         dummyDeviceType *dev;                                                                                   \
@@ -253,7 +248,21 @@ namespace mpl = boost::mpl;
 /// framework.
 ///
 #define DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)                                               \
-    DECLARE_STATE_MACHINE(mainStateMachine, initialState, transitionTable)                                      \
+    BOOST_MSM_EUML_TRANSITION_TABLE((                                                                           \
+        transitionTable                                                                                         \
+    ),mainStateMachine_table)                                                                                   \
+    BOOST_MSM_EUML_DECLARE_STATE_MACHINE(( mainStateMachine_table,                                              \
+                                           init_ << initialState ),                                             \
+                                           mainStateMachine__)                                                  \
+    class mainStateMachine_ : public mainStateMachine__  {                                                      \
+      public:                                                                                                   \
+        mainStateMachine_(dummyDeviceType *_dev)                                                                \
+          : mainStateMachine__(),                                                                               \
+            dev(_dev)                                                                                           \
+        {}                                                                                                      \
+        dummyDeviceType *dev;                                                                                   \
+    };                                                                                                          \
+    typedef msm::back::state_machine<mainStateMachine_> mainStateMachine;                                       \
     mainStateMachine theStateMachine;
 
 ///
@@ -262,8 +271,8 @@ namespace mpl = boost::mpl;
 /// with END_CONSTRUCTOR, even if no code is put into the constructor.
 ///
 #define CONSTRUCTOR(name,...)                                                                                   \
-    name(std::string host, std::string instance, std::list< std::string > parameters) :                         \
-    VirtualLabBackend(host,instance,parameters),                                                                \
+    name(std::string mapFileName) :                                                                             \
+    VirtualLabBackend(mapFileName),                                                                             \
       ## __VA_ARGS__ ,                                                                                          \
       theStateMachine(this)                                                                                     \
     {
@@ -295,8 +304,8 @@ class VirtualLabBackend : public DummyBackend
   public:
 
     // constructor via standard device model decription (as used by the DeviceFactory)
-    VirtualLabBackend(std::string host, std::string instance, std::list< std::string > parameters) :
-      DummyBackend(host,instance,parameters),
+    VirtualLabBackend(std::string mapFileName) :
+      DummyBackend(mapFileName),
       lastWrittenData(NULL),
       lastWrittenSize(0)
     {
