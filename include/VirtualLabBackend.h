@@ -316,8 +316,9 @@ namespace mpl = boost::mpl;
     theStateMachine.get_state< name * >()->setDummyDevice(this);
 
 ///
-/// Register backend type with the BackendFactory. Must be placed outside and below the class definition.
-/// name must be the class name.
+/// Register backend type with the BackendFactory. Must be placed into the C++ source file, not the header file!
+/// "name" must be the class name in the unqualified form. This commonly requires to call the macro inside the same
+/// name space as the VirtualLabBackend class (e.g. mtca4u).
 ///
 #define REGISTER_BACKEND_TYPE(name)                                                                             \
     /* Class to register the backend type with the factory. */                                                  \
