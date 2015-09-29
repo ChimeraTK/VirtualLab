@@ -10,8 +10,10 @@
 
 #include <limits>
 #include <string>
+#include <map>
 
 #include <boost/shared_ptr.hpp>
+#include <boost/weak_ptr.hpp>
 
 #include <boost/fusion/container/set.hpp>
 #include <boost/fusion/algorithm.hpp>
@@ -23,6 +25,7 @@
 
 #include <mtca4u/DummyBackend.h>
 #include <mtca4u/DummyRegisterAccessor.h>
+#include <mtca4u/BackendFactory.h>
 
 #include "TimerGroup.h"
 
@@ -269,8 +272,35 @@ namespace mpl = boost::mpl;
 /// Declare the constructor of the VirtualLabBackend. The first argument must be the class name. The other arguments
 /// must be the list of member initialisers, the code of the cunstructor follows this macro and must be terminated
 /// with END_CONSTRUCTOR, even if no code is put into the constructor.
+/// This macro will also insert the appropriate createInstance function used in the BackendFactory. It will maintain
+/// a map of all instances, so the same instance can be obtained multiple times when using the same instance name
+/// in the SDM URI (like "instanceID" in "sdm://./myVirtualLabBackend:instanceID=mapfile.map").
+/// To register the backend type with the BackendFactory, the macro REGISTER_BACKEND_TYPE must be used.
+/// @attention TODO This is currently not thread-safe!
 ///
 #define CONSTRUCTOR(name,...)                                                                                   \
+    /* createInstance() function used by the BackendFactory. Creates only one instance per instance name! */    \
+    static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::string instance,                   \
+        std::list<std::string> parameters) {                                                                    \
+      if(parameters.empty() || instance == "") {                                                                \
+        throw mtca4u::DummyBackendException("No map file name or instance ID given in the sdm URI.",            \
+                                    mtca4u::DummyBackendException::INVALID_PARAMETER);                          \
+      }                                                                                                         \
+      /* search instance map and create new instance, if bot found under the name */                            \
+      if(getInstanceMap().find(instance) == getInstanceMap().end()) {                                           \
+        boost::shared_ptr<mtca4u::DeviceBackend> ptr( new name(parameters.front()) );                           \
+        getInstanceMap().insert( std::make_pair(instance,ptr) );                                                \
+        return ptr;                                                                                             \
+      }                                                                                                         \
+      /* return existing instance from the map */                                                               \
+      return boost::shared_ptr<mtca4u::DeviceBackend>(getInstanceMap()[instance]);                              \
+    }                                                                                                           \
+    /* Static and global instance map (plain static members don't work header-only!) */                         \
+    static std::map< std::string, boost::weak_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {                  \
+      static std::map< std::string, boost::weak_ptr<mtca4u::DeviceBackend> > instanceMap;                       \
+      return instanceMap;                                                                                       \
+    }                                                                                                           \
+    /* Actual constructor of the VirtualLabBackend class. */                                                    \
     name(std::string mapFileName) :                                                                             \
     VirtualLabBackend(mapFileName),                                                                             \
       ## __VA_ARGS__ ,                                                                                          \
@@ -284,6 +314,22 @@ namespace mpl = boost::mpl;
 ///
 #define INIT_SUB_STATE_MACHINE(name)                                                                            \
     theStateMachine.get_state< name * >()->setDummyDevice(this);
+
+///
+/// Register backend type with the BackendFactory. Must be placed outside and below the class definition.
+/// name must be the class name.
+///
+#define REGISTER_BACKEND_TYPE(name)                                                                             \
+    /* Class to register the backend type with the factory. */                                                  \
+    /* Since the instance is created in the header, we might create multiple instances of the registerer. */    \
+    /* Multiple registrations are ok, since they get stored in the map and are just overwritten. */             \
+    class name ## _BackendRegisterer {                                                                          \
+      public:                                                                                                   \
+        name ## _BackendRegisterer() {                                                                          \
+          mtca4u::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance);            \
+        }                                                                                                       \
+    };                                                                                                          \
+    name ## _BackendRegisterer name ## _backendRegisterer;
 
 
 namespace mtca4u { namespace VirtualLab {
