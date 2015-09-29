@@ -409,6 +409,11 @@ class VirtualLabBackend : public DummyBackend
           request = tval+current;
         }
 
+        /// Clear the timer (so it will not fire any more unless it is set again)
+        void clear() {
+          request = -1;
+        }
+
         /// Advance the timer's current time by tval milliseconds. Returns true if the timer was fired.
         /// If tval < 0 this function does nothing.
         /// Note: calling this function with tval > getRemaining() will fire the event only a single time!
