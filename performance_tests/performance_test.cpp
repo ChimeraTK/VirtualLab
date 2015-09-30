@@ -70,6 +70,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     friend int main();
 };
 
+REGISTER_BACKEND_TYPE(VirtualTestDevice)
 
 int main() {
 

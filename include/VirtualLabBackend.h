@@ -276,7 +276,15 @@ namespace mpl = boost::mpl;
 /// a map of all instances, so the same instance can be obtained multiple times when using the same instance name
 /// in the SDM URI (like "instanceID" in "sdm://./myVirtualLabBackend:instanceID=mapfile.map").
 /// To register the backend type with the BackendFactory, the macro REGISTER_BACKEND_TYPE must be used.
-/// @attention TODO This is currently not thread-safe!
+///
+/// Sometimes you need to force the linkter to link the object code that registers the backend in the factory (e.g.
+/// if you do not explicitly use any other part of the library). In this case, just refer to
+/// <yourBackend>::backendRegisterer.dummy somewhere in your code (e.g. by setting it to 1).
+///
+/// @attention The backends are not thread-safe. When using a VirtualLabBackend from a frontend Device concurrently in
+/// multiple threads, a transparent locking decorator must be used. When using it concurrently from the backend-side
+/// (e.g. through the backend register accessors, timers, sinks and sources etc.) you must ensure proper locking
+/// yourself.
 ///
 #define CONSTRUCTOR(name,...)                                                                                   \
     /* createInstance() function used by the BackendFactory. Creates only one instance per instance name! */    \
@@ -300,12 +308,22 @@ namespace mpl = boost::mpl;
       static std::map< std::string, boost::weak_ptr<mtca4u::DeviceBackend> > instanceMap;                       \
       return instanceMap;                                                                                       \
     }                                                                                                           \
+    /* Class to register the backend type with the factory. */                                                  \
+    class BackendRegisterer {                                                                                   \
+      public:                                                                                                   \
+        BackendRegisterer() : dummy(0) {                                                                        \
+          mtca4u::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance);            \
+        }                                                                                                       \
+        /* dummy variable we can reference to force linking the object code when just using the header */       \
+        int dummy;                                                                                              \
+    };                                                                                                          \
+    static BackendRegisterer backendRegisterer;                                                                 \
     /* Actual constructor of the VirtualLabBackend class. */                                                    \
     name(std::string mapFileName) :                                                                             \
-    VirtualLabBackend(mapFileName),                                                                             \
+      VirtualLabBackend(mapFileName),                                                                           \
       ## __VA_ARGS__ ,                                                                                          \
       theStateMachine(this)                                                                                     \
-    {
+      {
 
 #define END_CONSTRUCTOR }
 
@@ -316,21 +334,11 @@ namespace mpl = boost::mpl;
     theStateMachine.get_state< name * >()->setDummyDevice(this);
 
 ///
-/// Register backend type with the BackendFactory. Must be placed into the C++ source file, not the header file!
-/// "name" must be the class name in the unqualified form. This commonly requires to call the macro inside the same
-/// name space as the VirtualLabBackend class (e.g. mtca4u).
+/// Register backend type with the BackendFactory. Must be placed into the C++ source file for any VirtualLabBackend
+/// even when not intending to use the backend factory (not into the header file)!
 ///
 #define REGISTER_BACKEND_TYPE(name)                                                                             \
-    /* Class to register the backend type with the factory. */                                                  \
-    /* Since the instance is created in the header, we might create multiple instances of the registerer. */    \
-    /* Multiple registrations are ok, since they get stored in the map and are just overwritten. */             \
-    class name ## _BackendRegisterer {                                                                          \
-      public:                                                                                                   \
-        name ## _BackendRegisterer() {                                                                          \
-          mtca4u::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance);            \
-        }                                                                                                       \
-    };                                                                                                          \
-    name ## _BackendRegisterer name ## _backendRegisterer;
+    name::BackendRegisterer name::backendRegisterer;
 
 
 namespace mtca4u { namespace VirtualLab {

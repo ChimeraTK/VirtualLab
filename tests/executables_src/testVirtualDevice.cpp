@@ -111,6 +111,8 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
 };
 
+REGISTER_BACKEND_TYPE(VirtualTestDevice)
+
 /**********************************************************************************************************************/
 class VirtualDeviceTest {
   public:
