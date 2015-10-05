@@ -657,13 +657,8 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-#INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/libdev_v2 \
-#                         @CMAKE_CURRENT_SOURCE_DIR@/libdevMap \
-#                         @CMAKE_CURRENT_SOURCE_DIR@/libexbase \
-#                         @CMAKE_CURRENT_SOURCE_DIR@/libmap \
-#                         @CMAKE_CURRENT_SOURCE_DIR@/doc/mainpage.dox \
-#			 @CMAKE_CURRENT_SOURCE_DIR@/doc/mapping.dox \
-#			 @CMAKE_CURRENT_SOURCE_DIR@/doc/deviceMapping.dox
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/src \
+                         @CMAKE_CURRENT_SOURCE_DIR@/include
 
 # This tag can be used to specify the character encoding of the source files 
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is 
