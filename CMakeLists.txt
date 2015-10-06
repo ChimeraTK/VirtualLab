@@ -21,11 +21,11 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic
 FIND_PACKAGE(mtca4u-deviceaccess 00.00 REQUIRED)
 include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
 
-FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
+FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
 
 #For some reason the system library has to be mentioned explicitly to the linker.
 #This is strange because the thead library has it as a dependency.
-FIND_PACKAGE(Boost COMPONENTS thread system unit_test_framework)
+FIND_PACKAGE(Boost COMPONENTS system unit_test_framework)
 IF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
   set(TESTING_IS_ENABLED "true")
   ENABLE_TESTING()
