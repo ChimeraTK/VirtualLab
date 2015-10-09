@@ -49,7 +49,8 @@ namespace mpl = boost::mpl;
 
 /**
  * Declare a logging state. Entry and exit of this state will be looged to std::cout.
- */
+ *
+ * (test coverage hint: this macro is used in the test, but output is not actually tested) */
 #define DECLARE_LOGGING_STATE(name)                                                                             \
   class name : public msm::front::state<> , public msm::front::euml::euml_state<name> {                         \
     public:                                                                                                     \
@@ -118,7 +119,8 @@ namespace mpl = boost::mpl;
  * class and the second argument will be parsed as the guard condition (standard C++ syntax). Inside the condition,
  * the variable "value" can be used which contains the value of the register written in the event (type: int32_t,
  * always the first word written).
- */
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_REGISTER_GUARD(guardName, condition)                                                            \
     class guardName :  msm::front::euml::euml_action<guardName>                                                 \
     {                                                                                                           \
@@ -140,7 +142,8 @@ namespace mpl = boost::mpl;
  * Declare a guard condition. The argument guardName is the name of the resulting guard class.
  * The code must follow this macro, contain a return statement returning a boolean and has to be terminated
  * with END_DECLARE_GUARD.
- */
+ *
+ * (test coverage hint: these two macros are used in the test) */
 #define DECLARE_GUARD(guardName)                                                                                \
     class guardName :  msm::front::euml::euml_action<guardName>                                                 \
     {                                                                                                           \
@@ -202,13 +205,14 @@ namespace mpl = boost::mpl;
     name ## _ name;
 
 /**
- * Declare a state machine.
+ * Declare a state machine (usually a sub-state machine, also see DECLARE_MAIN_STATE_MACHINE)
  * dummyDeviceType is the class name of the physDummyDevice implementation the state machine will be used in
  * stateMachineName is the name of the state machine itself. Several types will be defined based on this names with
  * one or more trailing underscores.
  * initialState is the name of the initial state. Multiple states can be added by separating them with "<<".
  * transitionTable is the transition table in eUML syntax.
- */
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_STATE_MACHINE(stateMachineName, initialState, transitionTable)                                  \
     BOOST_MSM_EUML_TRANSITION_TABLE((                                                                           \
         transitionTable                                                                                         \
@@ -230,7 +234,7 @@ namespace mpl = boost::mpl;
  * Declare the main state machine. This is just like DECLARE_STATE_MACHINE but with a fixed name "mainStateMachine".
  * Also the state machine will be instantiated under the name "theStateMachine", as expected by other parts of this
  * framework.
-  *
+ *
  * (test coverage hint: this macro is used in the test) */
 #define DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)                                               \
     BOOST_MSM_EUML_TRANSITION_TABLE((                                                                           \
@@ -312,14 +316,16 @@ namespace mpl = boost::mpl;
 
 /**
  * Initialise a sub-state machine. This should be called inside of the constructor.
- */
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define INIT_SUB_STATE_MACHINE(name)                                                                            \
     theStateMachine.get_state< name * >()->setDummyDevice(this);
 
 /**
  * Register backend type with the BackendFactory. Must be placed into the C++ source file for any VirtualLabBackend
  * even when not intending to use the backend factory (not into the header file)!
- */
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define REGISTER_BACKEND_TYPE(name)                                                                             \
     name::BackendRegisterer name::backendRegisterer;
 

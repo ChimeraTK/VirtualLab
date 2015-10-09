@@ -38,7 +38,7 @@ set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_
 aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
 
 MACRO( COPY_MAPPING_FILES )
-  foreach( FILE_TO_COPY test.mapp )
+  foreach( FILE_TO_COPY test.mapp dummies.dmap )
     configure_file( tests/${FILE_TO_COPY} ${PROJECT_BINARY_DIR}/${FILE_TO_COPY} copyonly)
   endforeach( FILE_TO_COPY )
 ENDMACRO( COPY_MAPPING_FILES )

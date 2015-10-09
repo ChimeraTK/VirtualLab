@@ -8,6 +8,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include <mtca4u/Device.h>
 #include "VirtualLabBackend.h"
 
 using namespace boost::unit_test_framework;
@@ -36,12 +37,18 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       readCount(0),
       writeCount(0),
       writeMuxedCount(0),
+      write42Count(0),
+      readWithFlagCount(0),
       someRegister(this,"APP0","SOME_REGISTER"),
       someMuxedRegister(this,"APP0","DAQ0_ADCA"),
       myTimer(this),
       mySecondTimer(this),
       timers__(this),
-      timers(this) )
+      timers(this),
+      someFlag(false),
+      subCounter(0)
+    )
+      INIT_SUB_STATE_MACHINE(subMachine)
     END_CONSTRUCTOR
 
     // Overload open and close to send events on device open and close. For a real VirtualLabBackend, this should
@@ -58,8 +65,8 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     /// states
     DECLARE_STATE(DevClosed)
     DECLARE_STATE(DevOpen)
-    DECLARE_STATE(SomeIntermediateState)
-    DECLARE_STATE(CountingState)
+    DECLARE_LOGGING_STATE(SomeIntermediateState)
+    DECLARE_LOGGING_STATE(CountingState)
 
     /// events
     DECLARE_EVENT(onDeviceOpen)
@@ -70,6 +77,8 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_EVENT(onRead)
     DECLARE_EVENT(onWrite)
     DECLARE_EVENT(onWriteMuxed)
+    DECLARE_EVENT(startSubMachine)
+    DECLARE_EVENT(stopSubMachine)
 
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(countingAction)
@@ -86,8 +95,18 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     END_DECLARE_ACTION
 
     /// read and write actions
+    DECLARE_ACTION(readWithFlagAction)
+        dev->readWithFlagCount++;
+    END_DECLARE_ACTION
+
+    /// read and write actions
     DECLARE_ACTION(writeAction)
         dev->writeCount++;
+    END_DECLARE_ACTION
+
+    /// read and write actions
+    DECLARE_ACTION(write42Action)
+        dev->write42Count++;
     END_DECLARE_ACTION
 
     /// read and write actions
@@ -99,6 +118,8 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     int readCount;
     int writeCount;
     int writeMuxedCount;
+    int write42Count;
+    int readWithFlagCount;
 
     /// connect read and write events
     READEVENT_TABLE
@@ -126,6 +147,26 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     };
     timers_ timers;
 
+    /// register guard: allow transition if 42 is written
+    DECLARE_REGISTER_GUARD(is42Written, value == 42 )
+
+    /// guard testing if a flag is set or not
+    bool someFlag;
+    DECLARE_GUARD(someGuard)
+      return dev->someFlag;
+    END_DECLARE_GUARD
+
+    /// define a small sub-state machine
+    DECLARE_STATE(subInit)
+    DECLARE_EVENT(subEvent)
+    DECLARE_ACTION(subCount)
+      dev->subCounter++;
+    END_DECLARE_ACTION
+    int subCounter;
+    DECLARE_STATE_MACHINE(subMachine, subInit(), (
+      subInit() + subEvent() / subCount()
+    ))
+
     /// define the state machine structure
     DECLARE_MAIN_STATE_MACHINE(DevClosed(), (
       // =======================================================================================================
@@ -146,9 +187,15 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       CountingState() + onTimer() / countingAction(),
 
       // read and write events
-      DevOpen() + onRead() / readAction(),
-      DevOpen() + onWrite() / writeAction(),
-      DevOpen() + onWriteMuxed() / writeMuxedAction()
+      DevOpen() + onRead() [ ! someGuard() ] / readAction(),
+      DevOpen() + onRead() [ someGuard() ] / readWithFlagAction(),
+      DevOpen() + onWrite() [ ! is42Written() ] / writeAction(),
+      DevOpen() + onWrite() [ is42Written() ] / write42Action(),
+      DevOpen() + onWriteMuxed() / writeMuxedAction(),
+
+      // sub machine
+      DevOpen() + startSubMachine() == subMachine(),
+      subMachine() + stopSubMachine() == DevOpen()
     ))
 
 };
@@ -160,7 +207,9 @@ class VirtualDeviceTest {
   public:
     VirtualDeviceTest()
     {
-      device = boost::shared_ptr<VirtualTestDevice>( new VirtualTestDevice(TEST_MAPPING_FILE) );
+      std::list<std::string> params;
+      params.push_back(TEST_MAPPING_FILE);
+      device = boost::static_pointer_cast<VirtualTestDevice>( VirtualTestDevice::createInstance("", "0", params) );
     }
 
     /// test the device open and close events
@@ -171,6 +220,12 @@ class VirtualDeviceTest {
 
     /// test read and write events
     void testReadWriteEvents();
+
+    /// test guards
+    void testGuards();
+
+    /// test sub-state machine
+    void testSubMachine();
 
 
   private:
@@ -189,6 +244,8 @@ class  DummyDeviceTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testDevOpenClose, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testTimerGroup, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testReadWriteEvents, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testGuards, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testSubMachine, dummyDeviceTest ) );
     }};
 
 /**********************************************************************************************************************/
@@ -214,6 +271,14 @@ void VirtualDeviceTest::testDevOpenClose() {
   BOOST_CHECK( device->theStateMachine.current_state()[0] == 1 );
   device->close();
   BOOST_CHECK( device->theStateMachine.current_state()[0] == 0 );
+
+  // open virtual device (= backend) via a Device frontend
+  Device frontend;
+  frontend.open("DUMMY");
+  BOOST_CHECK( device->theStateMachine.current_state()[0] == 1 );
+  frontend.close();
+  BOOST_CHECK( device->theStateMachine.current_state()[0] == 0 );
+
 }
 
 /**********************************************************************************************************************/
@@ -361,7 +426,7 @@ void VirtualDeviceTest::testReadWriteEvents() {
 
   // write to register
   device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
-  data = 42;
+  data = 120;
   BOOST_CHECK( device->writeCount == 0 );
   device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
   BOOST_CHECK( device->writeCount == 1 );
@@ -377,7 +442,7 @@ void VirtualDeviceTest::testReadWriteEvents() {
 
   // write to muxed register
   device->_registerMapping->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA", elem, "APP0");
-  data = 42;
+  data = 120;
   BOOST_CHECK( device->writeMuxedCount == 0 );
   device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
   BOOST_CHECK( device->writeMuxedCount == 1 );
@@ -385,5 +450,84 @@ void VirtualDeviceTest::testReadWriteEvents() {
   BOOST_CHECK( device->writeMuxedCount == 2 );
 
 
+  device->close();
+}
+
+/**********************************************************************************************************************/
+void VirtualDeviceTest::testGuards() {
+  int data;
+  RegisterInfoMap::RegisterInfo elem;
+
+  std::cout << "testGuards" << std::endl;
+
+  // open device
+  device->open();
+
+  // write to register something passing the register guard
+  device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
+  data = 42;
+  BOOST_CHECK( device->write42Count == 0 );
+  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->write42Count == 1 );
+  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->write42Count == 2 );
+
+  // read from register with the flag set, so the normal guard is passed
+  device->someFlag = true;
+  device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
+  BOOST_CHECK( device->readWithFlagCount == 0 );
+  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->readWithFlagCount == 1 );
+  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->readWithFlagCount == 2 );
+
+  device->close();
+}
+
+/**********************************************************************************************************************/
+void VirtualDeviceTest::testSubMachine() {
+  std::cout << "testSubMachine" << std::endl;
+
+  // open device
+  device->open();
+
+  // test if events of the submachine while it is not running do any harm (should have no effect)
+  BOOST_CHECK( device->subCounter == 0 );
+  device->theStateMachine.process_event(VirtualTestDevice::subEvent());
+  BOOST_CHECK( device->subCounter == 0 );
+
+  // start sub machine
+  device->theStateMachine.process_event(VirtualTestDevice::startSubMachine());
+
+  // fire submachine event
+  BOOST_CHECK( device->subCounter == 0 );
+  device->theStateMachine.process_event(VirtualTestDevice::subEvent());
+  BOOST_CHECK( device->subCounter == 1 );
+  device->theStateMachine.process_event(VirtualTestDevice::subEvent());
+  BOOST_CHECK( device->subCounter == 2 );
+
+  // fire event of main machine which is currently not effective
+  device->theStateMachine.process_event(VirtualTestDevice::goCounting());
+  BOOST_CHECK( device->subCounter == 2 );
+  device->theStateMachine.process_event(VirtualTestDevice::subEvent());
+  BOOST_CHECK( device->subCounter == 3 );
+
+  // fire event to exit submachine
+  device->theStateMachine.process_event(VirtualTestDevice::stopSubMachine());
+  BOOST_CHECK( device->subCounter == 3 );
+  device->theStateMachine.process_event(VirtualTestDevice::subEvent());
+  BOOST_CHECK( device->subCounter == 3 );
+
+  // enter submachine another time
+  device->theStateMachine.process_event(VirtualTestDevice::startSubMachine());
+  BOOST_CHECK( device->subCounter == 3 );
+  device->theStateMachine.process_event(VirtualTestDevice::subEvent());
+  BOOST_CHECK( device->subCounter == 4 );
+  device->theStateMachine.process_event(VirtualTestDevice::stopSubMachine());
+  BOOST_CHECK( device->subCounter == 4 );
+  device->theStateMachine.process_event(VirtualTestDevice::subEvent());
+  BOOST_CHECK( device->subCounter == 4 );
+
+  // close device
   device->close();
 }
