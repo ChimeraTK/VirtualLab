@@ -33,49 +33,23 @@ using namespace boost::msm::front::euml;        // this is required when using b
 namespace msm = boost::msm;
 namespace mpl = boost::mpl;
 
-///
-/// Declare an event. Use instead of BOOST_MSM_EUML_EVENT, as we must not create instances for the events as well.
-///
+/**
+ * Declare an event. Use instead of BOOST_MSM_EUML_EVENT, as we must not create instances for the events as well.
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_EVENT(name)                                                                                     \
   class name : public msm::front::euml::euml_event< name > {};
 
-///
-/// Declare a plain state, without any entry or exit functions etc.
-///
+/**
+ * Declare a plain state, without any entry or exit functions etc.
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_STATE(name)                                                                                     \
   class name : public msm::front::state<> , public msm::front::euml::euml_state<name> {};
 
-/*
-///
-/// Declare a state with actions. The second arg decl can be used to define onEntry and onExit actions with the macros
-/// STATE_ON_ENTRY and STATE_ON_EXIT.
-///
-#define DECLARE_ACTION_STATE(name,decl)                                                                         \
-  class name : public msm::front::state<> , public msm::front::euml::euml_state<name> {                         \
-    public:                                                                                                     \
-      decl                                                                                                      \
-  };
-
-///
-/// for use inside DECLARE_STATE(), see documentation there. Put the code to be executed on entry in braces after the
-/// macro invocation.
-///
-#define STATE_ON_ENTRY                                                                                          \
-   template <class Event,class FSM>                                                                             \
-   void on_entry(Event const&,FSM&)
-
-///
-/// for use inside DECLARE_STATE(), see documentation there Put the code to be executed on exit in braces after the
-/// macro invocation.
-///
-#define STATE_ON_EXIT                                                                                           \
-   template <class Event,class FSM>                                                                             \
-   void on_exit(Event const&,FSM&)
-*/
-
-///
-/// Declare a logging state. Entry and exit of this state will be looged to std::cout.
-///
+/**
+ * Declare a logging state. Entry and exit of this state will be looged to std::cout.
+ */
 #define DECLARE_LOGGING_STATE(name)                                                                             \
   class name : public msm::front::state<> , public msm::front::euml::euml_state<name> {                         \
     public:                                                                                                     \
@@ -85,46 +59,51 @@ namespace mpl = boost::mpl;
       void on_exit(Event const&,FSM&) { std::cout << "Leaving state: " << #name << std::endl; }                 \
   };
 
-///
-/// Declare a dummy register accessor for single-word or 1D-array registers.
-/// UserType is the data type the data should be accessed by. The conversion is handled internally using the
-/// FixedPointConverter.
-///
+/**
+ * Declare a dummy register accessor for single-word or 1D-array registers.
+ * UserType is the data type the data should be accessed by. The conversion is handled internally using the
+ * FixedPointConverter.
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_REGISTER(UserType, name) mtca4u::DummyRegisterAccessor<UserType> name;
 
-///
-/// Declare a dummy register accessor for multiplexed 2D-array registers.
-/// UserType is the data type the data should be accessed by. The conversion is handled internally using the
-/// FixedPointConverter.
-///
+/**
+ * Declare a dummy register accessor for multiplexed 2D-array registers.
+ * UserType is the data type the data should be accessed by. The conversion is handled internally using the
+ * FixedPointConverter.
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_MUXED_REGISTER(UserType, name) mtca4u::DummyMultiplexedRegisterAccessor<UserType> name;
 
-///
-/// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events.
-/// The table must be terminated with END_WRITEEVENT_TABLE.
-///
+/**
+ * Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events.
+ * The table must be terminated with END_WRITEEVENT_TABLE.
+ *
+ * (test coverage hint: these two macros are used in the test) */
 #define WRITEEVENT_TABLE                                                                                        \
-  void regWriteEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {                 \
-    (void)bar; (void)address; (void)data; (void)sizeInBytes;
+  void regWriteEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {                                      \
+    (void)bar; (void)address; (void)sizeInBytes;
 
 #define END_WRITEEVENT_TABLE }
 
-///
-/// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for read events
-/// The table must be terminated with END_READEVENT_TABLE.
-///
+/**
+ * Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for read events
+ * The table must be terminated with END_READEVENT_TABLE.
+ *
+ * (test coverage hint: these two macros are used in the test) */
 #define READEVENT_TABLE                                                                                         \
-  void regReadEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {                  \
-    (void)bar; (void)address; (void)data; (void)sizeInBytes;
+  void regReadEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {                                       \
+    (void)bar; (void)address; (void)sizeInBytes;
 
 #define END_READEVENT_TABLE }
 
-///
-/// Connect events with register names. The first argument eventName is the name of an event previously
-/// declared using BOOST_MSM_EUML_EVENT. Use this macro in the of the WRITE_EVENT_TABLE and READ_EVENT_TABLE macros.
-/// Do not separate multiple calls to CONNECT_REGISTER_EVENT inside the same WRITE_EVENT_TABLE/READ_EVENT_TABLE macro by
-/// any separator (i.e. no comma in between - starting a new line is allowed, though!).
-///
+/**
+ * Connect events with register names. The first argument eventName is the name of an event previously
+ * declared using BOOST_MSM_EUML_EVENT. Use this macro in the of the WRITE_EVENT_TABLE and READ_EVENT_TABLE macros.
+ * Do not separate multiple calls to CONNECT_REGISTER_EVENT inside the same WRITE_EVENT_TABLE/READ_EVENT_TABLE macro by
+ * any separator (i.e. no comma in between - starting a new line is allowed, though!).
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define CONNECT_REGISTER_EVENT(eventName, registerModule, registerName)                                         \
   {                                                                                                             \
     RegisterInfoMap::RegisterInfo elem;                                                                         \
@@ -134,13 +113,13 @@ namespace mpl = boost::mpl;
     }                                                                                                           \
   }
 
-///
-/// Declare a guard condition on the value of a register. The resulting guard condition can be used on an event
-/// defined with the CONNECT_REGISTER_EVENT macro. The first argument guardName is the name of the resulting guard
-/// class and the second argument will be parsed as the guard condition (standard C++ syntax). Inside the condition,
-/// the variable "value" can be used which contains the value of the register written in the event (type: int32_t,
-/// always the first word written).
-///
+/**
+ * Declare a guard condition on the value of a register. The resulting guard condition can be used on an event
+ * defined with the CONNECT_REGISTER_EVENT macro. The first argument guardName is the name of the resulting guard
+ * class and the second argument will be parsed as the guard condition (standard C++ syntax). Inside the condition,
+ * the variable "value" can be used which contains the value of the register written in the event (type: int32_t,
+ * always the first word written).
+ */
 #define DECLARE_REGISTER_GUARD(guardName, condition)                                                            \
     class guardName :  msm::front::euml::euml_action<guardName>                                                 \
     {                                                                                                           \
@@ -158,11 +137,11 @@ namespace mpl = boost::mpl;
         }                                                                                                       \
     };
 
-///
-/// Declare a guard condition. The argument guardName is the name of the resulting guard class.
-/// The code must follow this macro, contain a return statement returning a boolean and has to be terminated
-/// with END_DECLARE_GUARD.
-///
+/**
+ * Declare a guard condition. The argument guardName is the name of the resulting guard class.
+ * The code must follow this macro, contain a return statement returning a boolean and has to be terminated
+ * with END_DECLARE_GUARD.
+ */
 #define DECLARE_GUARD(guardName)                                                                                \
     class guardName :  msm::front::euml::euml_action<guardName>                                                 \
     {                                                                                                           \
@@ -177,10 +156,11 @@ namespace mpl = boost::mpl;
 
 #define END_DECLARE_GUARD }};
 
-///
-/// Declare an action with arbitrary code. The argument actionName is the name of the resulting action class.
-/// The code must follow this macro and has to be terminated with END_DECLARE_ACTION.
-///
+/**
+ * Declare an action with arbitrary code. The argument actionName is the name of the resulting action class.
+ * The code must follow this macro and has to be terminated with END_DECLARE_ACTION.
+ *
+ * (test coverage hint: these two macros are used in the test) */
 #define DECLARE_ACTION(actionName)                                                                              \
     class actionName :  msm::front::euml::euml_action<actionName>                                               \
     {                                                                                                           \
@@ -195,15 +175,17 @@ namespace mpl = boost::mpl;
 
 #define END_DECLARE_ACTION }};
 
-///
-/// Declare a timer with a given name. Will fire the given event.
-///
+/**
+ * Declare a timer with a given name. Will fire the given event.
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_TIMER(name,event) Timer<event> name;
 
-///
-/// Declare a timer group with a given name. The additional arguments must be the timers part of
-/// this group, previously declared using DECLARE_TIMER.
-///
+/**
+ * Declare a timer group with a given name. The additional arguments must be the timers part of
+ * this group, previously declared using DECLARE_TIMER.
+ *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_TIMER_GROUP(name, ...)                                                                          \
     typedef boost::fusion::vector< DECLARE_TIMER_GROUP_DECLARE_VECTOR(__VA_ARGS__) > name ## __;                \
     class name ## _: public TimerGroup<name ## __> {                                                            \
@@ -220,14 +202,14 @@ namespace mpl = boost::mpl;
     };                                                                                                          \
     name ## _ name;
 
-///
-/// Declare a state machine.
-/// dummyDeviceType is the class name of the physDummyDevice implementation the state machine will be used in
-/// stateMachineName is the name of the state machine itself. Several types will be defined based on this names with
-/// one or more trailing underscores.
-/// initialState is the name of the initial state. Multiple states can be added by separating them with "<<".
-/// transitionTable is the transition table in eUML syntax.
-///
+/**
+ * Declare a state machine.
+ * dummyDeviceType is the class name of the physDummyDevice implementation the state machine will be used in
+ * stateMachineName is the name of the state machine itself. Several types will be defined based on this names with
+ * one or more trailing underscores.
+ * initialState is the name of the initial state. Multiple states can be added by separating them with "<<".
+ * transitionTable is the transition table in eUML syntax.
+ */
 #define DECLARE_STATE_MACHINE(stateMachineName, initialState, transitionTable)                                  \
     BOOST_MSM_EUML_TRANSITION_TABLE((                                                                           \
         transitionTable                                                                                         \
@@ -245,11 +227,12 @@ namespace mpl = boost::mpl;
     };                                                                                                          \
     typedef msm::back::state_machine<stateMachineName ## _> stateMachineName;
 
-///
-/// Declare the main state machine. This is just like DECLARE_STATE_MACHINE but with a fixed name "mainStateMachine".
-/// Also the state machine will be instantiated under the name "theStateMachine", as expected by other parts of this
-/// framework.
-///
+/**
+ * Declare the main state machine. This is just like DECLARE_STATE_MACHINE but with a fixed name "mainStateMachine".
+ * Also the state machine will be instantiated under the name "theStateMachine", as expected by other parts of this
+ * framework.
+  *
+ * (test coverage hint: this macro is used in the test) */
 #define DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)                                               \
     BOOST_MSM_EUML_TRANSITION_TABLE((                                                                           \
         transitionTable                                                                                         \
@@ -268,24 +251,25 @@ namespace mpl = boost::mpl;
     typedef msm::back::state_machine<mainStateMachine_> mainStateMachine;                                       \
     mainStateMachine theStateMachine;
 
-///
-/// Declare the constructor of the VirtualLabBackend. The first argument must be the class name. The other arguments
-/// must be the list of member initialisers, the code of the cunstructor follows this macro and must be terminated
-/// with END_CONSTRUCTOR, even if no code is put into the constructor.
-/// This macro will also insert the appropriate createInstance function used in the BackendFactory. It will maintain
-/// a map of all instances, so the same instance can be obtained multiple times when using the same instance name
-/// in the SDM URI (like "instanceID" in "sdm://./myVirtualLabBackend:instanceID=mapfile.map").
-/// To register the backend type with the BackendFactory, the macro REGISTER_BACKEND_TYPE must be used.
-///
-/// Sometimes you need to force the linkter to link the object code that registers the backend in the factory (e.g.
-/// if you do not explicitly use any other part of the library). In this case, just refer to
-/// <yourBackend>::backendRegisterer.dummy somewhere in your code (e.g. by setting it to 1).
-///
-/// @attention The backends are not thread-safe. When using a VirtualLabBackend from a frontend Device concurrently in
-/// multiple threads, a transparent locking decorator must be used. When using it concurrently from the backend-side
-/// (e.g. through the backend register accessors, timers, sinks and sources etc.) you must ensure proper locking
-/// yourself.
-///
+/**
+ * Declare the constructor of the VirtualLabBackend. The first argument must be the class name. The other arguments
+ * must be the list of member initialisers, the code of the cunstructor follows this macro and must be terminated
+ * with END_CONSTRUCTOR, even if no code is put into the constructor.
+ * This macro will also insert the appropriate createInstance function used in the BackendFactory. It will maintain
+ * a map of all instances, so the same instance can be obtained multiple times when using the same instance name
+ * in the SDM URI (like "instanceID" in "sdm://./myVirtualLabBackend:instanceID=mapfile.map").
+ * To register the backend type with the BackendFactory, the macro REGISTER_BACKEND_TYPE must be used.
+ *
+ * Sometimes you need to force the linkter to link the object code that registers the backend in the factory (e.g.
+ * if you do not explicitly use any other part of the library). In this case, just refer to
+ * <yourBackend>::backendRegisterer.dummy somewhere in your code (e.g. by setting it to 1).
+ *
+ * @attention The backends are not thread-safe. When using a VirtualLabBackend from a frontend Device concurrently in
+ * multiple threads, a transparent locking decorator must be used. When using it concurrently from the backend-side
+ * (e.g. through the backend register accessors, timers, sinks and sources etc.) you must ensure proper locking
+ * yourself.
+ *
+ * (test coverage hint: these two macros are used in the test) */
 #define CONSTRUCTOR(name,...)                                                                                   \
     /* createInstance() function used by the BackendFactory. Creates only one instance per instance name! */    \
     static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::string instance,                   \
@@ -327,16 +311,16 @@ namespace mpl = boost::mpl;
 
 #define END_CONSTRUCTOR }
 
-///
-/// Initialise a sub-state machine. This should be called inside of the constructor.
-///
+/**
+ * Initialise a sub-state machine. This should be called inside of the constructor.
+ */
 #define INIT_SUB_STATE_MACHINE(name)                                                                            \
     theStateMachine.get_state< name * >()->setDummyDevice(this);
 
-///
-/// Register backend type with the BackendFactory. Must be placed into the C++ source file for any VirtualLabBackend
-/// even when not intending to use the backend factory (not into the header file)!
-///
+/**
+ * Register backend type with the BackendFactory. Must be placed into the C++ source file for any VirtualLabBackend
+ * even when not intending to use the backend factory (not into the header file)!
+ */
 #define REGISTER_BACKEND_TYPE(name)                                                                             \
     name::BackendRegisterer name::backendRegisterer;
 
@@ -372,6 +356,7 @@ class VirtualLabBackend : public DummyBackend
 
     /// override writeArea to fire the events
     virtual void write(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
+
       // save as last written data, for use inside guards of the events we may trigger now
       lastWrittenData = data;
       lastWrittenSize = sizeInBytes;
@@ -380,13 +365,14 @@ class VirtualLabBackend : public DummyBackend
       DummyBackend::write(bar, address, data, sizeInBytes);
 
       // trigger events
-      regWriteEvents(bar,address,data,sizeInBytes);
+      regWriteEvents(bar, address, sizeInBytes);
     }
 
     /// override readArea to fire the events
     virtual void read(uint8_t bar, uint32_t address, int32_t *data, size_t sizeInBytes) {
+
       // trigger events
-      regReadEvents(bar, address, data, sizeInBytes);
+      regReadEvents(bar, address, sizeInBytes);
 
       // perform the actual write
       DummyBackend::read(bar, address, data, sizeInBytes);
@@ -398,14 +384,10 @@ class VirtualLabBackend : public DummyBackend
     typedef derived dummyDeviceType;
 
     /// trigger register-write events. Will be implemented using WRITE_EVENT_TABLE in the device implementation
-    virtual void regWriteEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
-      (void) bar; (void) address; (void) data; (void) sizeInBytes;
-    };
+    virtual void regWriteEvents(uint8_t /* bar */, uint32_t /* address */, size_t /* sizeInBytes */) {} //LCOV_EXCL_LINE
 
     /// trigger register-read events. Will be implemented using READ_EVENT_TABLE in the device implementation
-    virtual void regReadEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
-      (void) bar; (void) address; (void) data; (void) sizeInBytes;
-    };
+    virtual void regReadEvents(uint8_t /* bar */, uint32_t /* address */, size_t /* sizeInBytes */) {}  //LCOV_EXCL_LINE
 
     /// VirtualDevice::Timer class
     template<class timerEvent>
