@@ -113,7 +113,7 @@ namespace mpl = boost::mpl;
 /// Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for read events
 /// The table must be terminated with END_READEVENT_TABLE.
 ///
-#define READEVENT_TABLE(table)                                                                                  \
+#define READEVENT_TABLE                                                                                         \
   void regReadEvents(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {                  \
     (void)bar; (void)address; (void)data; (void)sizeInBytes;
 
@@ -127,7 +127,7 @@ namespace mpl = boost::mpl;
 ///
 #define CONNECT_REGISTER_EVENT(eventName, registerModule, registerName)                                         \
   {                                                                                                             \
-  RegisterInfoMap::RegisterInfo elem;                                                                           \
+    RegisterInfoMap::RegisterInfo elem;                                                                         \
     _registerMapping->getRegisterInfo(registerName, elem, registerModule);                                      \
     if(bar == elem.reg_bar && address >= elem.reg_address && address < elem.reg_address+elem.reg_size) {        \
       theStateMachine.process_event(eventName ());                                                              \
@@ -429,7 +429,7 @@ class VirtualLabBackend : public DummyBackend
         bool advance(double tval) {
           if(tval < 0) return false;
           current += tval;
-          if(request > 0 && current >= request) {
+          if(request > 0 && current >= request) {               // todo subtract epsilon
             request = -1;
             dev->theStateMachine.process_event( timerEvent() );
             return true;
