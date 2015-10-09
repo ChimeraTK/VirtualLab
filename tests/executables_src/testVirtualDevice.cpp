@@ -33,6 +33,9 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
     CONSTRUCTOR(VirtualTestDevice,
       someCounter(0),
+      readCount(0),
+      writeCount(0),
+      writeMuxedCount(0),
       someRegister(this,"APP0","SOME_REGISTER"),
       someMuxedRegister(this,"APP0","DAQ0_ADCA"),
       myTimer(this),
@@ -64,6 +67,9 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_EVENT(onTimer)
     DECLARE_EVENT(onSecondTimer)
     DECLARE_EVENT(goCounting)
+    DECLARE_EVENT(onRead)
+    DECLARE_EVENT(onWrite)
+    DECLARE_EVENT(onWriteMuxed)
 
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(countingAction)
@@ -73,6 +79,35 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
     /// our counter for the counting action
     int someCounter;
+
+    /// read and write actions
+    DECLARE_ACTION(readAction)
+        dev->readCount++;
+    END_DECLARE_ACTION
+
+    /// read and write actions
+    DECLARE_ACTION(writeAction)
+        dev->writeCount++;
+    END_DECLARE_ACTION
+
+    /// read and write actions
+    DECLARE_ACTION(writeMuxedAction)
+        dev->writeMuxedCount++;
+    END_DECLARE_ACTION
+
+    /// counters for read and write events
+    int readCount;
+    int writeCount;
+    int writeMuxedCount;
+
+    /// connect read and write events
+    READEVENT_TABLE
+      CONNECT_REGISTER_EVENT(onRead,"APP0","SOME_REGISTER")
+    END_READEVENT_TABLE
+    WRITEEVENT_TABLE
+      CONNECT_REGISTER_EVENT(onWrite,"APP0","SOME_REGISTER")
+      CONNECT_REGISTER_EVENT(onWriteMuxed,"APP0","AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA")
+    END_WRITEEVENT_TABLE
 
     /// register accessors
     DECLARE_REGISTER(int, someRegister);
@@ -95,6 +130,8 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_MAIN_STATE_MACHINE(DevClosed(), (
       // =======================================================================================================
       // open and close the device
+      // note: an actual virtual device should never distinguish between closed and opened states, since real
+      // hardware does not, either!
       DevClosed() + onDeviceOpen() == DevOpen(),
       DevOpen() + onDeviceClose() == DevClosed(),
       SomeIntermediateState() + onDeviceClose() == DevClosed(),
@@ -106,7 +143,12 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
       // counting state (for counting how often a timer fired)
       DevOpen() + goCounting() == CountingState(),
-      CountingState() + onTimer() / countingAction()
+      CountingState() + onTimer() / countingAction(),
+
+      // read and write events
+      DevOpen() + onRead() / readAction(),
+      DevOpen() + onWrite() / writeAction(),
+      DevOpen() + onWriteMuxed() / writeMuxedAction()
     ))
 
 };
@@ -127,6 +169,9 @@ class VirtualDeviceTest {
     /// test the timer group system
     void testTimerGroup();
 
+    /// test read and write events
+    void testReadWriteEvents();
+
 
   private:
     boost::shared_ptr<VirtualTestDevice> device;
@@ -143,6 +188,7 @@ class  DummyDeviceTestSuite : public test_suite {
 
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testDevOpenClose, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testTimerGroup, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testReadWriteEvents, dummyDeviceTest ) );
     }};
 
 /**********************************************************************************************************************/
@@ -300,5 +346,44 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device->someCounter == 11 );
 
   // close the device
+  device->close();
+}
+
+/**********************************************************************************************************************/
+void VirtualDeviceTest::testReadWriteEvents() {
+  int data;
+  RegisterInfoMap::RegisterInfo elem;
+
+  std::cout << "testReadWriteEvents" << std::endl;
+
+  // open device
+  device->open();
+
+  // write to register
+  device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
+  data = 42;
+  BOOST_CHECK( device->writeCount == 0 );
+  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->writeCount == 1 );
+  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->writeCount == 2 );
+
+  // read from register
+  BOOST_CHECK( device->readCount == 0 );
+  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->readCount == 1 );
+  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->readCount == 2 );
+
+  // write to muxed register
+  device->_registerMapping->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA", elem, "APP0");
+  data = 42;
+  BOOST_CHECK( device->writeMuxedCount == 0 );
+  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->writeMuxedCount == 1 );
+  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  BOOST_CHECK( device->writeMuxedCount == 2 );
+
+
   device->close();
 }
