@@ -98,17 +98,16 @@ namespace mpl = boost::mpl;
 #define END_READEVENT_TABLE }
 
 /**
- * Connect events with register names. The first argument eventName is the name of an event previously
- * declared using BOOST_MSM_EUML_EVENT. Use this macro in the of the WRITE_EVENT_TABLE and READ_EVENT_TABLE macros.
- * Do not separate multiple calls to CONNECT_REGISTER_EVENT inside the same WRITE_EVENT_TABLE/READ_EVENT_TABLE macro by
- * any separator (i.e. no comma in between - starting a new line is allowed, though!).
+ * Connect events with registers. The first argument eventName is the name of an event previously declared using
+ * BOOST_MSM_EUML_EVENT. The second argument is a DummyRegisterAccessor for the register to connect with. Use this
+ * macro in the of the WRITE_EVENT_TABLE and READ_EVENT_TABLE macros.
+ * Do not separate multiple calls to CONNECT_REGISTER_EVENT inside the same WRITE_EVENT_TABLE/READ_EVENT_TABLE macro
+ * by any separator (i.e. no comma or semicolon in between - starting a new line is allowed, though!).
  *
  * (test coverage hint: this macro is used in the test) */
-#define CONNECT_REGISTER_EVENT(eventName, registerModule, registerName)                                         \
+#define CONNECT_REGISTER_EVENT(eventName, regsterAccessor)                                                      \
   {                                                                                                             \
-    RegisterInfoMap::RegisterInfo elem;                                                                         \
-    _registerMapping->getRegisterInfo(registerName, elem, registerModule);                                      \
-    if(bar == elem.reg_bar && address >= elem.reg_address && address < elem.reg_address+elem.reg_size) {        \
+    if(regsterAccessor.isAddressInRange(bar,address,sizeInBytes)) {                                             \
       theStateMachine.process_event(eventName ());                                                              \
     }                                                                                                           \
   }

@@ -102,11 +102,11 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
     /// connect read and write events
     READEVENT_TABLE
-      CONNECT_REGISTER_EVENT(onRead,"APP0","SOME_REGISTER")
+      CONNECT_REGISTER_EVENT(onRead,someRegister)
     END_READEVENT_TABLE
     WRITEEVENT_TABLE
-      CONNECT_REGISTER_EVENT(onWrite,"APP0","SOME_REGISTER")
-      CONNECT_REGISTER_EVENT(onWriteMuxed,"APP0","AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA")
+      CONNECT_REGISTER_EVENT(onWrite,someRegister)
+      CONNECT_REGISTER_EVENT(onWriteMuxed,someMuxedRegister)
     END_WRITEEVENT_TABLE
 
     /// register accessors
