@@ -261,7 +261,7 @@ namespace mpl = boost::mpl;
  *
  * Sometimes you need to force the linkter to link the object code that registers the backend in the factory (e.g.
  * if you do not explicitly use any other part of the library). In this case, just refer to
- * <yourBackend>::backendRegisterer.dummy somewhere in your code (e.g. by setting it to 1).
+ * \verbatim<yourBackend>::backendRegisterer.dummy\endverbatim somewhere in your code (e.g. by setting it to 1).
  *
  * @attention The backends are not thread-safe. When using a VirtualLabBackend from a frontend Device concurrently in
  * multiple threads, a transparent locking decorator must be used. When using it concurrently from the backend-side
