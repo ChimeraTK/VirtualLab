@@ -122,21 +122,19 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: this macro is used in the test) */
 #define DECLARE_REGISTER_GUARD(guardName, condition)                                                            \
-    class guardName :  msm::front::euml::euml_action<guardName>                                                 \
-    {                                                                                                           \
-      public:                                                                                                   \
-        guardName() {}                                                                                          \
-        typedef guardName action_name;                                                                          \
+    BOOST_MSM_EUML_ACTION(guardName ## _) {                                                                     \
         template <class Fsm,class Evt,class SourceState,class TargetState>                                      \
         bool operator()(Evt const& ,Fsm& fsm,SourceState&,TargetState& )                                        \
         {                                                                                                       \
-            dummyDeviceType *dev = fsm.dev;                                                                     \
-            assert( dev->lastWrittenData != NULL );                                                             \
-            int32_t value = *(dev->lastWrittenData);                                                            \
-            (void)value;                                                                                        \
-            return ( condition );                                                                               \
+            return fsm.dev->guardName ## _funct();                                                              \
         }                                                                                                       \
-    };
+    };                                                                                                          \
+    typedef BOOST_TYPEOF( guardName ## _ ) guardName;                                                           \
+    bool guardName ## _funct() {                                                                                \
+      int32_t value = *lastWrittenData;                                                                         \
+      (void)value;                                                                                              \
+      return ( condition );                                                                                     \
+    }
 
 /**
  * Declare a guard condition. The argument guardName is the name of the resulting guard class.
@@ -145,18 +143,17 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: these two macros are used in the test) */
 #define DECLARE_GUARD(guardName)                                                                                \
-    class guardName :  msm::front::euml::euml_action<guardName>                                                 \
-    {                                                                                                           \
-      public:                                                                                                   \
-        guardName() {}                                                                                          \
-        typedef guardName action_name;                                                                          \
+    BOOST_MSM_EUML_ACTION(guardName ## _) {                                                                     \
         template <class Fsm,class Evt,class SourceState,class TargetState>                                      \
         bool operator()(Evt const& ,Fsm& fsm,SourceState&,TargetState& )                                        \
         {                                                                                                       \
-            dummyDeviceType *dev = fsm.dev;                                                                     \
-            (void)dev;
+            return fsm.dev->guardName ## _funct();                                                              \
+        }                                                                                                       \
+    };                                                                                                          \
+    typedef BOOST_TYPEOF( guardName ## _ ) guardName;                                                           \
+    bool guardName ## _funct() {
 
-#define END_DECLARE_GUARD }};
+#define END_DECLARE_GUARD }
 
 /**
  * Declare an action with arbitrary code. The argument actionName is the name of the resulting action class.
@@ -164,18 +161,17 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: these two macros are used in the test) */
 #define DECLARE_ACTION(actionName)                                                                              \
-    class actionName :  msm::front::euml::euml_action<actionName>                                               \
-    {                                                                                                           \
-      public:                                                                                                   \
-      actionName() {}                                                                                           \
-        typedef actionName action_name;                                                                         \
+    BOOST_MSM_EUML_ACTION(actionName ## _) {                                                                    \
         template <class Fsm,class Evt,class SourceState,class TargetState>                                      \
         void operator()(Evt const& ,Fsm& fsm,SourceState&,TargetState& )                                        \
         {                                                                                                       \
-            dummyDeviceType *dev = fsm.dev;                                                                     \
-            (void)dev;
+            fsm.dev->actionName ## _funct();                                                                    \
+        }                                                                                                       \
+    };                                                                                                          \
+    typedef BOOST_TYPEOF( actionName ## _ ) actionName;                                                         \
+    void actionName ## _funct() {
 
-#define END_DECLARE_ACTION }};
+#define END_DECLARE_ACTION }
 
 /**
  * Declare a timer with a given name. Will fire the given event.

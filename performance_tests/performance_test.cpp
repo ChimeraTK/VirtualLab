@@ -39,9 +39,9 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(fillingAction)
-        dev->bigPlain[dev->currentOffset] = dev->readNext;
-        dev->currentOffset++;
-        dev->myTimer.set(1);
+        bigPlain[currentOffset] = readNext;
+        currentOffset++;
+        myTimer.set(1);
     END_DECLARE_ACTION
 
     /// register accessors

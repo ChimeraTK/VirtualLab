@@ -54,6 +54,13 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     // Overload open and close to send events on device open and close. For a real VirtualLabBackend, this should
     // usually not be done, as the state of the device driver should not be part of the state machine.
     virtual void open() {
+      someCounter = 0;
+      readCount = 0;
+      writeCount = 0;
+      writeMuxedCount = 0;
+      write42Count = 0;
+      readWithFlagCount = 0;
+      someFlag = false;
       VirtualLabBackend::open();
       theStateMachine.process_event(onDeviceOpen());
     }
@@ -79,11 +86,12 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_EVENT(onWriteMuxed)
     DECLARE_EVENT(startSubMachine)
     DECLARE_EVENT(stopSubMachine)
+    DECLARE_EVENT(runDoubleAction)
 
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(countingAction)
-        dev->someCounter++;
-        dev->myTimer.set(1);
+        someCounter++;
+        myTimer.set(1);
     END_DECLARE_ACTION
 
     /// our counter for the counting action
@@ -91,27 +99,27 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
     /// read and write actions
     DECLARE_ACTION(readAction)
-        dev->readCount++;
+        readCount++;
     END_DECLARE_ACTION
 
     /// read and write actions
     DECLARE_ACTION(readWithFlagAction)
-        dev->readWithFlagCount++;
+        readWithFlagCount++;
     END_DECLARE_ACTION
 
     /// read and write actions
     DECLARE_ACTION(writeAction)
-        dev->writeCount++;
+        writeCount++;
     END_DECLARE_ACTION
 
     /// read and write actions
     DECLARE_ACTION(write42Action)
-        dev->write42Count++;
+        write42Count++;
     END_DECLARE_ACTION
 
     /// read and write actions
     DECLARE_ACTION(writeMuxedAction)
-        dev->writeMuxedCount++;
+        writeMuxedCount++;
     END_DECLARE_ACTION
 
     /// counters for read and write events
@@ -153,14 +161,14 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     /// guard testing if a flag is set or not
     bool someFlag;
     DECLARE_GUARD(someGuard)
-      return dev->someFlag;
+      return someFlag;
     END_DECLARE_GUARD
 
     /// define a small sub-state machine
     DECLARE_STATE(subInit)
     DECLARE_EVENT(subEvent)
     DECLARE_ACTION(subCount)
-      dev->subCounter++;
+      subCounter++;
     END_DECLARE_ACTION
     int subCounter;
     DECLARE_STATE_MACHINE(subMachine, subInit(), (
@@ -193,6 +201,9 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       DevOpen() + onWrite() [ is42Written() ] / write42Action(),
       DevOpen() + onWriteMuxed() / writeMuxedAction(),
 
+      // test running two actions on a single event (abusing some existing actions...)
+      DevOpen() + runDoubleAction() / ( readAction(), writeAction() ),
+
       // sub machine
       DevOpen() + startSubMachine() == subMachine(),
       subMachine() + stopSubMachine() == DevOpen()
@@ -215,14 +226,17 @@ class VirtualDeviceTest {
     /// test the device open and close events
     void testDevOpenClose();
 
+    /// test actions
+    void testActions();
+
+    /// test guards
+    void testGuards();
+
     /// test the timer group system
     void testTimerGroup();
 
     /// test read and write events
     void testReadWriteEvents();
-
-    /// test guards
-    void testGuards();
 
     /// test sub-state machine
     void testSubMachine();
@@ -242,9 +256,10 @@ class  DummyDeviceTestSuite : public test_suite {
       boost::shared_ptr<VirtualDeviceTest> dummyDeviceTest( new VirtualDeviceTest );
 
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testDevOpenClose, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testActions, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testGuards, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testTimerGroup, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testReadWriteEvents, dummyDeviceTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testGuards, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testSubMachine, dummyDeviceTest ) );
     }};
 
@@ -527,6 +542,27 @@ void VirtualDeviceTest::testSubMachine() {
   BOOST_CHECK( device->subCounter == 4 );
   device->theStateMachine.process_event(VirtualTestDevice::subEvent());
   BOOST_CHECK( device->subCounter == 4 );
+
+  // close device
+  device->close();
+}
+
+/**********************************************************************************************************************/
+void VirtualDeviceTest::testActions() {
+  std::cout << "testActions" << std::endl;
+
+  // open device
+  device->open();
+
+  // send event to trigger double action
+  BOOST_CHECK( device->readCount == 0 );
+  BOOST_CHECK( device->writeCount == 0 );
+  device->theStateMachine.process_event(VirtualTestDevice::runDoubleAction());
+  BOOST_CHECK( device->readCount == 1 );
+  BOOST_CHECK( device->writeCount == 1 );
+  device->theStateMachine.process_event(VirtualTestDevice::runDoubleAction());
+  BOOST_CHECK( device->readCount == 2 );
+  BOOST_CHECK( device->writeCount == 2 );
 
   // close device
   device->close();
