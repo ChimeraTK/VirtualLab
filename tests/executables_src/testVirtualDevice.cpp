@@ -599,6 +599,7 @@ void VirtualDeviceTest::testSinkSource() {
   BOOST_CHECK_THROW( sink.getValue(0.), SignalSourceException );
 
   // feed some values to the source and read from sink
+  source->setMaxHistoryLength(20.);
   source->feedValue(0.,10.);
   source->feedValue(0.1,99.);
   source->feedValue(1.,-30.);
@@ -625,5 +626,12 @@ void VirtualDeviceTest::testSinkSource() {
   BOOST_CHECK( sink.getValue(11.) == 666. );
   BOOST_CHECK( sink.getValue(12.) == 666. );
   BOOST_CHECK_THROW( sink.getValue(12.001), SignalSourceException );
+
+  // check if old values are removed from bufer
+  source->feedValue(20.,123.);
+  BOOST_CHECK( sink.getValue(0.) == 10. );
+  source->feedValue(20.001,124.);
+  BOOST_CHECK_THROW( sink.getValue(0.), SignalSourceException );
+
 
 }

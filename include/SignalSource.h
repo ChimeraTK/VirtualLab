@@ -17,7 +17,7 @@ namespace mtca4u { namespace VirtualLab {
   /// Exception class
   class SignalSourceException : public Exception {
     public:
-      enum {NO_VALUE};
+      enum {NO_VALUE,REQUEST_FAR_PAST};
       SignalSourceException(const std::string &message, unsigned int exceptionID)
       : Exception( message, exceptionID ){}
   };
@@ -30,7 +30,9 @@ namespace mtca4u { namespace VirtualLab {
 
       SignalSource()
       : valueNeededCallback(NULL),
-        timeTolerance(std::numeric_limits<double>::epsilon())
+        timeTolerance(std::numeric_limits<double>::epsilon()),
+        historyLength(std::numeric_limits<double>::epsilon()),
+        currentTime(0)
       {}
 
       /// [call from backend/model] set callback function to be called when a new value needs to be computed. The
@@ -49,13 +51,27 @@ namespace mtca4u { namespace VirtualLab {
 
       /// [call from backend/model] provide new value for the given time
       void feedValue(double time, double value) {
+        // save value into buffer
         buffer[time] = value;
+        // update current time
+        if(time > currentTime) {
+          currentTime = time;
+          // clear old values from history
+          if(buffer.begin()->first < time - historyLength) {
+            auto firstToKeep = buffer.upper_bound(time - historyLength);
+            buffer.erase(buffer.begin(), firstToKeep);
+          }
+        }
       }
 
       /// [called from sink] obtain value for the given time
       double getValue(double time) {
         // if buffer is empty, request sample
         if(buffer.empty()) return getValueFromCallback(time);
+        // check if request goes too far into the past
+        if(currentTime - historyLength > time) {
+          throw SignalSourceException("Value request is too far into the past.",SignalSourceException::REQUEST_FAR_PAST);
+        }
         // search in buffer: find the first element after the requested time
         auto it = buffer.upper_bound(time + std::numeric_limits<double>::epsilon());
         // if this is the first element in the buffer, no sample for the requested time exists
@@ -66,6 +82,11 @@ namespace mtca4u { namespace VirtualLab {
         if(it->first < time - timeTolerance) return getValueFromCallback(time);
         // return value from buffer
         return it->second;
+      }
+
+      /// [called from sink] set maximum time difference a getValue() request may go into the past
+      void setMaxHistoryLength(double timeDifference) {
+        historyLength = timeDifference;
       }
 
     protected:
@@ -88,6 +109,12 @@ namespace mtca4u { namespace VirtualLab {
 
       /// time tolerance
       double timeTolerance;
+
+      /// history length
+      double historyLength;
+
+      /// time of last fed sample
+      double currentTime;
 
   };
 
