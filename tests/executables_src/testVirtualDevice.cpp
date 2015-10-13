@@ -10,6 +10,7 @@
 
 #include <mtca4u/Device.h>
 #include "VirtualLabBackend.h"
+#include "SignalSink.h"
 
 using namespace boost::unit_test_framework;
 
@@ -241,6 +242,9 @@ class VirtualDeviceTest {
     /// test sub-state machine
     void testSubMachine();
 
+    /// test sink and source mechanism stand-alone
+    void testSinkSource();
+
 
   private:
     boost::shared_ptr<VirtualTestDevice> device;
@@ -261,6 +265,8 @@ class  DummyDeviceTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testTimerGroup, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testReadWriteEvents, dummyDeviceTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testSubMachine, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testSinkSource, dummyDeviceTest ) );
+
     }};
 
 /**********************************************************************************************************************/
@@ -566,4 +572,58 @@ void VirtualDeviceTest::testActions() {
 
   // close device
   device->close();
+}
+
+/**********************************************************************************************************************/
+void VirtualDeviceTest::testSinkSource() {
+  std::cout << "testSinkSource" << std::endl;
+
+  // test constant source
+  SignalSink sink(42);
+  BOOST_CHECK( sink.getValue(-10.) == 42 );
+  BOOST_CHECK( sink.getValue(0.) == 42 );
+  BOOST_CHECK( sink.getValue(10.) == 42 );
+
+  // re-connect with another constant source
+  auto constSource = boost::make_shared<ConstantSignalSource>(120);
+  sink.connect( boost::static_pointer_cast<SignalSource>(constSource) );
+  BOOST_CHECK( sink.getValue(-10.) == 120 );    // the sink has no history
+  BOOST_CHECK( sink.getValue(0.) == 120 );
+  BOOST_CHECK( sink.getValue(10.) == 120 );
+
+  // create non-constant source and connect with it
+  auto source = boost::make_shared<SignalSource>();
+  sink.connect(source);
+
+  // nothing in the buffer yet
+  BOOST_CHECK_THROW( sink.getValue(0.), SignalSourceException );
+
+  // feed some values to the source and read from sink
+  source->feedValue(0.,10.);
+  source->feedValue(0.1,99.);
+  source->feedValue(1.,-30.);
+  source->feedValue(10.,666.);
+
+  BOOST_CHECK( sink.getValue(0.) == 10. );
+  BOOST_CHECK( sink.getValue(0.1) == 99. );
+  BOOST_CHECK( sink.getValue(1.) == -30. );
+  BOOST_CHECK( sink.getValue(10.) == 666. );
+  BOOST_CHECK_THROW( sink.getValue(11.), SignalSourceException );
+
+  // add tolerance to the source
+  source->setTimeTolerance(2.);
+  BOOST_CHECK_THROW( sink.getValue(-0.001), SignalSourceException );
+  BOOST_CHECK( sink.getValue(0.) == 10. );
+  BOOST_CHECK( sink.getValue(0.0999) == 10. );
+  BOOST_CHECK( sink.getValue(0.1) == 99. );
+  BOOST_CHECK( sink.getValue(0.999) == 99. );
+  BOOST_CHECK( sink.getValue(1.) == -30. );
+  BOOST_CHECK( sink.getValue(3.) == -30. );
+  BOOST_CHECK_THROW( sink.getValue(3.001), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(7.999), SignalSourceException );
+  BOOST_CHECK( sink.getValue(10.) == 666. );
+  BOOST_CHECK( sink.getValue(11.) == 666. );
+  BOOST_CHECK( sink.getValue(12.) == 666. );
+  BOOST_CHECK_THROW( sink.getValue(12.001), SignalSourceException );
+
 }
