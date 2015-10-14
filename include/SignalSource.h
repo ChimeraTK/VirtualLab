@@ -37,7 +37,7 @@ namespace mtca4u { namespace VirtualLab {
 
       /// [call from backend/model] set callback function to be called when a new value needs to be computed. The
       /// callback function must return the new value. The new value will be automatically placed into the buffer.
-      void setCallback( boost::function<double(double)> &callback ) {
+      void setCallback(const boost::function<double(double)> &callback) {
         valueNeededCallback = callback;
       }
 
