@@ -10,6 +10,8 @@
 
 #include <map>
 #include <limits>
+#include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <mtca4u/Exception.h>
 
 namespace mtca4u { namespace VirtualLab {
@@ -28,29 +30,20 @@ namespace mtca4u { namespace VirtualLab {
 
     public:
 
-      SignalSource()
-      : valueNeededCallback(NULL),
-        timeTolerance(std::numeric_limits<double>::epsilon()),
-        historyLength(std::numeric_limits<double>::epsilon()),
-        currentTime(0)
-      {}
+      SignalSource();
 
       /// [call from backend/model] set callback function to be called when a new value needs to be computed. The
       /// callback function must return the new value. The new value will be automatically placed into the buffer.
-      void setCallback(const boost::function<double(double)> &callback) {
-        valueNeededCallback = callback;
-      }
+      void setCallback(const boost::function<double(double)> &callback);
 
       /// [call from backend/model] set time tolerance. A value for the time T will be used when a value for the time
       /// T+tolerance is requested. Backends may set this e.g. to the sampling time, since the output value will not
       /// change during this time. Models may set this e.g. to a fraction of the model's time constant to save computing
       /// time.
-      void setTimeTolerance(double time) {
-        timeTolerance = time;
-      }
+      void setTimeTolerance(double time);
 
       /// [call from backend/model] provide new value for the given time
-      void feedValue(double time, double value) {
+      inline void feedValue(double time, double value) {
         // save value into buffer
         buffer[time] = value;
         // update current time
@@ -65,7 +58,7 @@ namespace mtca4u { namespace VirtualLab {
       }
 
       /// [called from sink] obtain value for the given time
-      double getValue(double time) {
+      inline double getValue(double time) {
         // if buffer is empty, request sample
         if(buffer.empty()) return getValueFromCallback(time);
         // check if request goes too far into the past
@@ -85,14 +78,12 @@ namespace mtca4u { namespace VirtualLab {
       }
 
       /// [called from sink] set maximum time difference a getValue() request may go into the past
-      void setMaxHistoryLength(double timeDifference) {
-        historyLength = timeDifference;
-      }
+      void setMaxHistoryLength(double timeDifference);
 
     protected:
 
       /// obtain a new value via the callback function and place it into the buffer. Helper for getValue()
-      double getValueFromCallback(double time) {
+      inline double getValueFromCallback(double time) {
         if(valueNeededCallback == NULL) {
           throw SignalSourceException("No value matching the given time found.",SignalSourceException::NO_VALUE);
         }
@@ -123,19 +114,16 @@ namespace mtca4u { namespace VirtualLab {
 
     public:
 
-      ConstantSignalSource(double theValue)
-      : value(theValue)
-      {
-        valueNeededCallback = boost::bind(&ConstantSignalSource::constantCallback, this, _1);
-        timeTolerance = std::numeric_limits<double>::max();
-      }
+      ConstantSignalSource(double theValue);
 
     protected:
 
-      double constantCallback(double) {
+      /// callback just returing the constant value
+      inline double constantCallback(double) {
         return value;
       }
 
+      /// the value to be passed to the sink
       double value;
 
   };
