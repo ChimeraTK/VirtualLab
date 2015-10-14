@@ -8,6 +8,7 @@
 #ifndef SIGNALSINK_H
 #define SIGNALSINK_H
 
+#include <boost/make_shared.hpp>
 #include "SignalSource.h"
 
 namespace mtca4u { namespace VirtualLab {
