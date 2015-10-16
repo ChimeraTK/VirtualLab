@@ -599,7 +599,7 @@ void VirtualDeviceTest::testSinkSource() {
   BOOST_CHECK_THROW( sink.getValue(0.), SignalSourceException );
 
   // feed some values to the source and read from sink
-  source->setMaxHistoryLength(20.);
+  sink.setMaxHistoryLength(20.);
   source->feedValue(0.,10.);
   source->feedValue(0.1,99.);
   source->feedValue(1.,-30.);

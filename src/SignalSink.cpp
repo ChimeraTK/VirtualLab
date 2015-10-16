@@ -11,11 +11,12 @@ namespace mtca4u { namespace VirtualLab {
 
   /*******************************************************************************************************************/
   SignalSink::SignalSink(boost::shared_ptr<SignalSource> &source)
-  : signalSource(source)
+  : signalSource(source), historyLength(0)
   {}
 
   /*******************************************************************************************************************/
   SignalSink::SignalSink(double defaultValue)
+  : historyLength(0)
   {
     signalSource = boost::static_pointer_cast<SignalSource>(
         boost::make_shared<ConstantSignalSource>(defaultValue) );
@@ -24,6 +25,13 @@ namespace mtca4u { namespace VirtualLab {
   /*******************************************************************************************************************/
   void SignalSink::connect(const boost::shared_ptr<SignalSource> &source) {
     signalSource = source;
+    signalSource->setMaxHistoryLength(historyLength);
+  }
+
+  /*******************************************************************************************************************/
+  void SignalSink::setMaxHistoryLength(double timeDifference) {
+    historyLength = timeDifference;
+    signalSource->setMaxHistoryLength(historyLength);
   }
 
 }} // namespace mtca4u::VirtuaLab

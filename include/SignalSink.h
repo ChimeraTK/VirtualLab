@@ -34,10 +34,16 @@ namespace mtca4u { namespace VirtualLab {
         return signalSource->getValue(time);
       }
 
+      /// [call from backend] set maximum time difference a getValue() request may go into the past
+      void setMaxHistoryLength(double timeDifference);
+
     protected:
 
       /// the source providing our signal
       boost::shared_ptr<SignalSource> signalSource;
+
+      /// history length to be requested from the source
+      double historyLength;
 
   };
 
