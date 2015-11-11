@@ -396,8 +396,8 @@ class VirtualLabBackend : public DummyBackend
       public:
         Timer(derived *_dev) : dev(_dev),request(-1),current(0) {}
 
-        /// Set the timer to fire in tval milliseconds
-        void set(double tval) {
+        /// Set the timer to fire in tval
+        void set(VirtualTime tval) {
           request = tval+current;
         }
 
@@ -406,13 +406,13 @@ class VirtualLabBackend : public DummyBackend
           request = -1;
         }
 
-        /// Advance the timer's current time by tval milliseconds. Returns true if the timer was fired.
+        /// Advance the timer's current time by tval. Returns true if the timer was fired.
         /// If tval < 0 this function does nothing.
         /// Note: calling this function with tval > getRemaining() will fire the event only a single time!
-        bool advance(double tval) {
+        bool advance(VirtualTime tval) {
           if(tval < 0) return false;
           current += tval;
-          if(request > 0 && current >= request) {               // todo subtract epsilon
+          if(request > 0 && current >= request) {
             request = -1;
             dev->theStateMachine.process_event( timerEvent() );
             return true;
@@ -421,7 +421,7 @@ class VirtualLabBackend : public DummyBackend
         }
 
         /// Obtain remaining time until the timer fires. Will be negative if the timer is not set.
-        double getRemaining() {
+        VirtualTime getRemaining() {
           if(request > 0) {
             return request-current;
           }
@@ -431,7 +431,7 @@ class VirtualLabBackend : public DummyBackend
         }
 
         /// Get current timer
-        double getCurrent() {
+        VirtualTime getCurrent() {
           return current;
         }
 
@@ -441,10 +441,10 @@ class VirtualLabBackend : public DummyBackend
         derived *dev;
 
         /// requested time
-        double request;
+        VirtualTime request;
 
         /// current time
-        double current;
+        VirtualTime current;
     };
 
     /// last written data (into any register) and its size. Will be used in guard conditions.

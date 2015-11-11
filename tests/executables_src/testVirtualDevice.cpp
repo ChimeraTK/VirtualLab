@@ -20,8 +20,7 @@ using namespace mtca4u::VirtualLab;
 #define TEST_MAPPING_FILE "test.mapp"
 
 /**********************************************************************************************************************/
-// forward declaration so we can declare it friend
-// of TestableDummydevice->
+// forward declaration so we can declare it friend of VirtualTestDevice
 class VirtualDeviceTest;
 
 /**********************************************************************************************************************/
@@ -92,7 +91,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(countingAction)
         someCounter++;
-        myTimer.set(1);
+        myTimer.set(1*seconds);
     END_DECLARE_ACTION
 
     /// our counter for the counting action
@@ -319,74 +318,74 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
 
   // set a timer
-  device->myTimer.set(10);
+  device->myTimer.set(10*seconds);
 
   // check if getRemaining gives the right time
-  BOOST_CHECK( device->myTimer.getRemaining() == 10 );
+  BOOST_CHECK( device->myTimer.getRemaining() == 10*seconds );
   BOOST_CHECK( device->mySecondTimer.getRemaining() == -1 );
-  BOOST_CHECK( device->timers.getRemaining() == 10 );
-  BOOST_CHECK( device->timers.getRemaining("myTimer") == 10 );
+  BOOST_CHECK( device->timers.getRemaining() == 10*seconds );
+  BOOST_CHECK( device->timers.getRemaining("myTimer") == 10*seconds );
   BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
 
-  // advance by 5
-  device->timers.advance(5);
+  // advance by 5 seconds
+  device->timers.advance(5*seconds);
 
   // check if getRemaining gives the right time
-  BOOST_CHECK( device->myTimer.getRemaining() == 5 );
+  BOOST_CHECK( device->myTimer.getRemaining() == 5*seconds );
   BOOST_CHECK( device->mySecondTimer.getRemaining() == -1 );
-  BOOST_CHECK( device->timers.getRemaining() == 5 );
-  BOOST_CHECK( device->timers.getRemaining("myTimer") == 5 );
+  BOOST_CHECK( device->timers.getRemaining() == 5*seconds );
+  BOOST_CHECK( device->timers.getRemaining("myTimer") == 5*seconds );
   BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
 
   // set second timer
-  device->mySecondTimer.set(20);
+  device->mySecondTimer.set(20*seconds);
 
   // check if getRemaining gives the right time
-  BOOST_CHECK( device->myTimer.getRemaining() == 5 );
-  BOOST_CHECK( device->mySecondTimer.getRemaining() == 20 );
-  BOOST_CHECK( device->timers.getRemaining() == 5 );
-  BOOST_CHECK( device->timers.getRemaining("myTimer") == 5 );
-  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 20 );
+  BOOST_CHECK( device->myTimer.getRemaining() == 5*seconds );
+  BOOST_CHECK( device->mySecondTimer.getRemaining() == 20*seconds );
+  BOOST_CHECK( device->timers.getRemaining() == 5*seconds );
+  BOOST_CHECK( device->timers.getRemaining("myTimer") == 5*seconds );
+  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 20*seconds );
 
   // advance by 1
-  device->timers.advance(1);
+  device->timers.advance(1*seconds);
 
   // check if getRemaining gives the right time
-  BOOST_CHECK( device->myTimer.getRemaining() == 4 );
-  BOOST_CHECK( device->mySecondTimer.getRemaining() == 19 );
-  BOOST_CHECK( device->timers.getRemaining() == 4 );
-  BOOST_CHECK( device->timers.getRemaining("myTimer") == 4 );
-  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 19 );
+  BOOST_CHECK( device->myTimer.getRemaining() == 4*seconds );
+  BOOST_CHECK( device->mySecondTimer.getRemaining() == 19*seconds );
+  BOOST_CHECK( device->timers.getRemaining() == 4*seconds );
+  BOOST_CHECK( device->timers.getRemaining("myTimer") == 4*seconds );
+  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 19*seconds );
 
   // advance to myTimer
   device->timers.advance("myTimer");
 
   // check if getRemaining gives the right time
   BOOST_CHECK( device->myTimer.getRemaining() == -1 );
-  BOOST_CHECK( device->mySecondTimer.getRemaining() == 15 );
-  BOOST_CHECK( device->timers.getRemaining() == 15 );
+  BOOST_CHECK( device->mySecondTimer.getRemaining() == 15*seconds );
+  BOOST_CHECK( device->timers.getRemaining() == 15*seconds );
   BOOST_CHECK( device->timers.getRemaining("myTimer") == -1 );
-  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 15 );
+  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 15*seconds );
 
   // advance to myTimer which is not set
   device->timers.advance("myTimer");
 
   // check if getRemaining gives the right time
   BOOST_CHECK( device->myTimer.getRemaining() == -1 );
-  BOOST_CHECK( device->mySecondTimer.getRemaining() == 15 );
-  BOOST_CHECK( device->timers.getRemaining() == 15 );
+  BOOST_CHECK( device->mySecondTimer.getRemaining() == 15*seconds );
+  BOOST_CHECK( device->timers.getRemaining() == 15*seconds );
   BOOST_CHECK( device->timers.getRemaining("myTimer") == -1 );
-  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 15 );
+  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 15*seconds );
 
   // set first timer again and advance one time
-  device->myTimer.set(20);
+  device->myTimer.set(20*seconds);
   device->timers.advance();
 
   // check if getRemaining gives the right time
-  BOOST_CHECK( device->myTimer.getRemaining() == 5 );
+  BOOST_CHECK( device->myTimer.getRemaining() == 5*seconds );
   BOOST_CHECK( device->mySecondTimer.getRemaining() == -1 );
-  BOOST_CHECK( device->timers.getRemaining() == 5 );
-  BOOST_CHECK( device->timers.getRemaining("myTimer") == 5 );
+  BOOST_CHECK( device->timers.getRemaining() == 5*seconds );
+  BOOST_CHECK( device->timers.getRemaining("myTimer") == 5*seconds );
   BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
 
   // advance to the end
@@ -400,35 +399,35 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
 
   // check current time
-  BOOST_CHECK( device->myTimer.getCurrent() == 30 );
-  BOOST_CHECK( device->mySecondTimer.getCurrent() == 30 );
-  BOOST_CHECK( device->timers.getCurrent() == 30 );
+  BOOST_CHECK( device->myTimer.getCurrent() == 30*seconds );
+  BOOST_CHECK( device->mySecondTimer.getCurrent() == 30*seconds );
+  BOOST_CHECK( device->timers.getCurrent() == 30*seconds );
 
   // open the device
   device->open();
 
   // set first timer and make it fire, then check if in SomeIntermediateState()
-  device->myTimer.set(5);
+  device->myTimer.set(5*seconds);
   device->timers.advance();
   BOOST_CHECK( device->theStateMachine.current_state()[0] == 2 );
 
   // set first timer again and make it fire, then check if still in SomeIntermediateState()
-  device->myTimer.set(5);
+  device->myTimer.set(5*seconds);
   device->timers.advance();
   BOOST_CHECK( device->theStateMachine.current_state()[0] == 2 );
 
   // set second timer and make it fire, then check if in DeviceOpen()
-  device->mySecondTimer.set(5);
+  device->mySecondTimer.set(5*seconds);
   device->timers.advance();
   BOOST_CHECK( device->theStateMachine.current_state()[0] == 1 );
 
   // go into CountingState() to count how often the timer fires
   device->theStateMachine.process_event(VirtualTestDevice::goCounting());
-  device->myTimer.set(1);
+  device->myTimer.set(1*seconds);
   BOOST_CHECK( device->someCounter == 0 );
   device->timers.advance();
   BOOST_CHECK( device->someCounter == 1 );
-  device->timers.advance(10);
+  device->timers.advance(10*seconds);
   BOOST_CHECK( device->someCounter == 11 );
 
   // close the device
@@ -580,58 +579,72 @@ void VirtualDeviceTest::testSinkSource() {
 
   // test constant source
   SignalSink sink(42);
-  BOOST_CHECK( sink.getValue(-10.) == 42 );
-  BOOST_CHECK( sink.getValue(0.) == 42 );
-  BOOST_CHECK( sink.getValue(10.) == 42 );
+  sink.setMaxHistoryLength(20*milliseconds);
+  BOOST_CHECK( sink.getValue(-10*milliseconds) == 42 );
+  BOOST_CHECK( sink.getValue(0*milliseconds) == 42 );
+  BOOST_CHECK( sink.getValue(10*milliseconds) == 42 );
 
   // re-connect with another constant source
   auto constSource = boost::make_shared<ConstantSignalSource>(120);
   sink.connect( boost::static_pointer_cast<SignalSource>(constSource) );
-  BOOST_CHECK( sink.getValue(-10.) == 120 );    // the sink has no history
-  BOOST_CHECK( sink.getValue(0.) == 120 );
-  BOOST_CHECK( sink.getValue(10.) == 120 );
+  BOOST_CHECK( sink.getValue(-10*milliseconds) == 120 );    // the sink has no history
+  BOOST_CHECK( sink.getValue(0*milliseconds) == 120 );
+  BOOST_CHECK( sink.getValue(10*milliseconds) == 120 );
 
   // create non-constant source and connect with it
   auto source = boost::make_shared<SignalSource>();
   sink.connect(source);
 
   // nothing in the buffer yet
-  BOOST_CHECK_THROW( sink.getValue(0.), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(0*milliseconds), SignalSourceException );
 
   // feed some values to the source and read from sink
-  sink.setMaxHistoryLength(20.);
-  source->feedValue(0.,10.);
-  source->feedValue(0.1,99.);
-  source->feedValue(1.,-30.);
-  source->feedValue(10.,666.);
+  source->feedValue(0*milliseconds,10.);
+  source->feedValue(100*microseconds,99.);
+  source->feedValue(1*milliseconds,-30.);
+  source->feedValue(10*milliseconds,666.);
 
-  BOOST_CHECK( sink.getValue(0.) == 10. );
-  BOOST_CHECK( sink.getValue(0.1) == 99. );
-  BOOST_CHECK( sink.getValue(1.) == -30. );
-  BOOST_CHECK( sink.getValue(10.) == 666. );
-  BOOST_CHECK_THROW( sink.getValue(11.), SignalSourceException );
+  BOOST_CHECK( sink.getValue(0*milliseconds) == 10. );
+  BOOST_CHECK( sink.getValue(100*microseconds) == 99. );
+  BOOST_CHECK( sink.getValue(1*milliseconds) == -30. );
+  BOOST_CHECK( sink.getValue(10*milliseconds) == 666. );
+  BOOST_CHECK_THROW( sink.getValue(11*milliseconds), SignalSourceException );
 
-  // add tolerance to the source
-  source->setTimeTolerance(2.);
-  BOOST_CHECK_THROW( sink.getValue(-0.001), SignalSourceException );
-  BOOST_CHECK( sink.getValue(0.) == 10. );
-  BOOST_CHECK( sink.getValue(0.0999) == 10. );
-  BOOST_CHECK( sink.getValue(0.1) == 99. );
-  BOOST_CHECK( sink.getValue(0.999) == 99. );
-  BOOST_CHECK( sink.getValue(1.) == -30. );
-  BOOST_CHECK( sink.getValue(3.) == -30. );
-  BOOST_CHECK_THROW( sink.getValue(3.001), SignalSourceException );
-  BOOST_CHECK_THROW( sink.getValue(7.999), SignalSourceException );
-  BOOST_CHECK( sink.getValue(10.) == 666. );
-  BOOST_CHECK( sink.getValue(11.) == 666. );
-  BOOST_CHECK( sink.getValue(12.) == 666. );
-  BOOST_CHECK_THROW( sink.getValue(12.001), SignalSourceException );
+  // add tolerance to the source and test it
+  source->setTimeTolerance(2*milliseconds);
+  BOOST_CHECK_THROW( sink.getValue(-1*picoseconds), SignalSourceException );
+  BOOST_CHECK( sink.getValue(0*milliseconds) == 10. );
+  BOOST_CHECK( sink.getValue(100*microseconds - 1*picoseconds) == 10. );
+  BOOST_CHECK( sink.getValue(100*microseconds) == 99. );
+  BOOST_CHECK( sink.getValue(1*milliseconds - 1*picoseconds) == 99. );
+  BOOST_CHECK( sink.getValue(1*milliseconds) == -30. );
+  BOOST_CHECK( sink.getValue(3*milliseconds) == -30. );
+  BOOST_CHECK_THROW( sink.getValue(3*milliseconds + 1*picoseconds), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(10*milliseconds - 1*picoseconds), SignalSourceException );
+  BOOST_CHECK( sink.getValue(10*milliseconds) == 666. );
+  BOOST_CHECK( sink.getValue(11*milliseconds) == 666. );
+  BOOST_CHECK( sink.getValue(12*milliseconds) == 666. );
+  BOOST_CHECK_THROW( sink.getValue(12*milliseconds + 1*picoseconds), SignalSourceException );
 
-  // check if old values are removed from bufer
-  source->feedValue(20.,123.);
-  BOOST_CHECK( sink.getValue(0.) == 10. );
-  source->feedValue(20.001,124.);
-  BOOST_CHECK_THROW( sink.getValue(0.), SignalSourceException );
+  // check if old values are removed from buffer
+  source->feedValue(20*milliseconds,123.);
+  BOOST_CHECK( sink.getValue(0*milliseconds) == 10. );
+  source->feedValue(20*milliseconds + 1*picoseconds,124.);
+  BOOST_CHECK_THROW( sink.getValue(0*milliseconds), SignalSourceException );
 
+  // change history length and check it
+  sink.setMaxHistoryLength(5*milliseconds);
+  source->feedValue(25*milliseconds,125.);
+  BOOST_CHECK( sink.getValue(20*milliseconds) == 123. );
+  source->feedValue(25*milliseconds + 1*picoseconds,126.);
+  BOOST_CHECK_THROW( sink.getValue(20*milliseconds), SignalSourceException );
+
+  // go to large times and check if it is still working
+  source->feedValue(100*days,127.);
+  source->feedValue(100*days + 5*milliseconds,128.);
+  BOOST_CHECK( sink.getValue(100*days) == 127. );
+  BOOST_CHECK( sink.getValue(100*days + 5*milliseconds) == 128. );
+  source->feedValue(100*days + 5*milliseconds + 1*picoseconds,129.);
+  BOOST_CHECK_THROW( sink.getValue(100*days), SignalSourceException );
 
 }

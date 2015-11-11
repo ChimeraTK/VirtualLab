@@ -29,7 +29,7 @@ namespace mtca4u { namespace VirtualLab {
   }
 
   /*******************************************************************************************************************/
-  void SignalSink::setMaxHistoryLength(double timeDifference) {
+  void SignalSink::setMaxHistoryLength(VirtualTime timeDifference) {
     historyLength = timeDifference;
     signalSource->setMaxHistoryLength(historyLength);
   }

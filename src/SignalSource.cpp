@@ -12,23 +12,23 @@ namespace mtca4u { namespace VirtualLab {
   /*******************************************************************************************************************/
   SignalSource::SignalSource()
   : valueNeededCallback(NULL),
-    timeTolerance(std::numeric_limits<double>::epsilon()),
-    historyLength(std::numeric_limits<double>::epsilon()),
+    timeTolerance(1),
+    historyLength(1),
     currentTime(0)
   {}
 
   /*******************************************************************************************************************/
-  void SignalSource::setCallback(const boost::function<double(double)> &callback) {
+  void SignalSource::setCallback(const boost::function<double(VirtualTime)> &callback) {
     valueNeededCallback = callback;
   }
 
   /*******************************************************************************************************************/
-  void SignalSource::setTimeTolerance(double time) {
+  void SignalSource::setTimeTolerance(VirtualTime time) {
     timeTolerance = time;
   }
 
   /*******************************************************************************************************************/
-  void SignalSource::setMaxHistoryLength(double timeDifference) {
+  void SignalSource::setMaxHistoryLength(VirtualTime timeDifference) {
     historyLength = timeDifference;
   }
 
@@ -37,7 +37,7 @@ namespace mtca4u { namespace VirtualLab {
   : value(theValue)
   {
     valueNeededCallback = boost::bind(&ConstantSignalSource::constantCallback, this, _1);
-    timeTolerance = std::numeric_limits<double>::max();
+    timeTolerance = std::numeric_limits<VirtualTime>::max();
   }
 
 }} // namespace mtca4u::VirtuaLab

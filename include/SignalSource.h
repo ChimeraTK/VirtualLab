@@ -14,6 +14,9 @@
 #include <boost/bind.hpp>
 #include <mtca4u/Exception.h>
 
+#include "VirtualTime.h"
+
+
 namespace mtca4u { namespace VirtualLab {
 
   /// Exception class
@@ -34,31 +37,31 @@ namespace mtca4u { namespace VirtualLab {
 
       /// [call from backend/model] set callback function to be called when a new value needs to be computed. The
       /// callback function must return the new value. The new value will be automatically placed into the buffer.
-      void setCallback(const boost::function<double(double)> &callback);
+      void setCallback(const boost::function<double(VirtualTime)> &callback);
 
       /// [call from backend/model] set time tolerance. A value for the time T will be used when a value for the time
       /// T+tolerance is requested. Backends may set this e.g. to the sampling time, since the output value will not
       /// change during this time. Models may set this e.g. to a fraction of the model's time constant to save computing
       /// time.
-      void setTimeTolerance(double time);
+      void setTimeTolerance(VirtualTime time);
 
       /// [call from backend/model] provide new value for the given time
-      inline void feedValue(double time, double value) {
+      inline void feedValue(VirtualTime time, double value) {
         // save value into buffer
         buffer[time] = value;
         // update current time
         if(time > currentTime) {
           currentTime = time;
           // clear old values from history
-          if(buffer.begin()->first < time - historyLength) {
-            auto firstToKeep = buffer.upper_bound(time - historyLength);
+          if( buffer.begin()->first < (time - historyLength) ) {
+            auto firstToKeep = buffer.upper_bound(time - historyLength - 1);
             buffer.erase(buffer.begin(), firstToKeep);
           }
         }
       }
 
       /// [called from sink] obtain value for the given time
-      inline double getValue(double time) {
+      inline double getValue(VirtualTime time) {
         // if buffer is empty, request sample
         if(buffer.empty()) return getValueFromCallback(time);
         // check if request goes too far into the past
@@ -66,7 +69,7 @@ namespace mtca4u { namespace VirtualLab {
           throw SignalSourceException("Value request is too far into the past.",SignalSourceException::REQUEST_FAR_PAST);
         }
         // search in buffer: find the first element after the requested time
-        auto it = buffer.upper_bound(time + std::numeric_limits<double>::epsilon());
+        auto it = buffer.upper_bound(time);
         // if this is the first element in the buffer, no sample for the requested time exists
         if(it == buffer.begin()) return getValueFromCallback(time);
         // decrement to get the most recent sample before the requested time
@@ -78,12 +81,12 @@ namespace mtca4u { namespace VirtualLab {
       }
 
       /// [called from sink] set maximum time difference a getValue() request may go into the past
-      void setMaxHistoryLength(double timeDifference);
+      void setMaxHistoryLength(VirtualTime timeDifference);
 
     protected:
 
       /// obtain a new value via the callback function and place it into the buffer. Helper for getValue()
-      inline double getValueFromCallback(double time) {
+      inline double getValueFromCallback(VirtualTime time) {
         if(valueNeededCallback == NULL) {
           throw SignalSourceException("No value matching the given time found.",SignalSourceException::NO_VALUE);
         }
@@ -93,19 +96,19 @@ namespace mtca4u { namespace VirtualLab {
       }
 
       /// callback called when new value is needed from backend or model
-      boost::function<double(double)> valueNeededCallback;
+      boost::function<double(VirtualTime)> valueNeededCallback;
 
       /// buffer of values (in dependence of time)
-      std::map<double,double> buffer;
+      std::map<VirtualTime,double> buffer;
 
       /// time tolerance
-      double timeTolerance;
+      VirtualTime timeTolerance;
 
       /// history length
-      double historyLength;
+      VirtualTime historyLength;
 
       /// time of last fed sample
-      double currentTime;
+      VirtualTime currentTime;
 
   };
 

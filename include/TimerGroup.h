@@ -1,16 +1,18 @@
 /*
- * timer.h
+ * TimerGroup.h
  *
  *  Created on: Sep 2, 2015
  *      Author: martin.hierholzer@desy.de
  */
 
-#ifndef TIMER_H
-#define TIMER_H
+#ifndef TIMERGROUP_H
+#define TIMERGROUP_H
 
 #include <boost/fusion/container.hpp>
 #include <boost/fusion/sequence.hpp>
 #include <boost/fusion/algorithm.hpp>
+
+#include "VirtualTime.h"
 
 namespace mtca4u { namespace VirtualLab {
 
@@ -92,15 +94,14 @@ namespace mtca4u { namespace VirtualLab {
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_9(x,...) dev->x, DECLARE_TIMER_GROUP_INIT_VECTOR_8 (__VA_ARGS__)
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_10(x,...) dev->x, DECLARE_TIMER_GROUP_INIT_VECTOR_9 (__VA_ARGS__)
 
-
-///
-/// Timer group base class.
-/// The template agument must be a boost::fusion::vector of the timer types.
-/// The implementation must initialise the timerTypes vector "timers" with all timers and the map names with the
-/// timer names and the corresponding index in the timerTypes vector.
-///
-/// This implementation is done for VirtualDevices using the DECLARE_TIMER_GROUP macro.
-///
+/**
+ * Timer group base class.
+ * The template agument must be a boost::fusion::vector of the timer types.
+ * The implementation must initialise the timerTypes vector "timers" with all timers and the map names with the
+ * timer names and the corresponding index in the timerTypes vector.
+ *
+ * This implementation is done for VirtualDevices using the DECLARE_TIMER_GROUP macro.
+ */
 template<class timerTypes>
 class TimerGroup {
   public:
@@ -108,31 +109,31 @@ class TimerGroup {
     ~TimerGroup() {}
 
     /// Get remaining time until the next timer fires, or -1 if no timer has been set.
-    double getRemaining() {
-      double remaining = std::numeric_limits<double>::max();
+    VirtualTime getRemaining() {
+      VirtualTime remaining = std::numeric_limits<VirtualTime>::max();
       boost::fusion::for_each(*timers, findRemaining(remaining));
-      if(remaining >= std::numeric_limits<double>::max()) return -1;
+      if(remaining >= std::numeric_limits<VirtualTime>::max()) return -1;
       return remaining;
     }
 
     /// Get remaining time until the specified timer fires, or -1 if the timer has not been set.
     /// Note: this call will be relatively expensive due to the string argument. If possible (e.g. inside a
     /// VirtualDevice implementation), access the subtimer directly.
-    double getRemaining(std::string name) {
-      double remaining = -2;
+    VirtualTime getRemaining(std::string name) {
+      VirtualTime remaining = -2;
       boost::fusion::for_each(*timers, findRemainingByName(*this,name,remaining));
       return remaining;
     }
 
-    /// Advance the timer's current time by tval milliseconds. Returns true if any timer was fired.
+    /// Advance the timer's current time by tval. Returns true if any timer was fired.
     /// If tval < 0, this function does nothing. If tval > getRemaining(), the timer is advanced in multiple steps to
     /// make sure repetitive events are fired.
-    bool advance(double tval) {
+    bool advance(VirtualTime tval) {
       if(tval < 0) return false;
       current += tval;
       bool hasFired = false;
       do {
-        double tstep = fmin(tval, getRemaining());
+        VirtualTime tstep = fmin(tval, getRemaining());
         boost::fusion::for_each(*timers, advanceTimer(tstep,hasFired));
         tval -= tstep;
       } while(tval > 0);
@@ -147,13 +148,13 @@ class TimerGroup {
 
     /// Advance the group to the next requested time of the given sub-timer. Returns true if any timer was fired.
     /// Note: this call will be relatively expensive due to the string argument. If possible (e.g. inside a
-    /// VirtualDevice implementation), access the subtimer directly, obtain its remaining time and call advance(double).
+    /// VirtualDevice implementation), access the subtimer directly, obtain its remaining time and call advance(VirtualTime).
     bool advance(std::string name) {
       return advance(getRemaining(name));
     }
 
-    /// Get current time (in milliseconds)
-    double getCurrent()
+    /// Get current time
+    VirtualTime getCurrent()
     {
       return current;
     }
@@ -162,20 +163,20 @@ class TimerGroup {
 
     /// functor to find the smallest remaining time
     struct findRemaining {
-        findRemaining(double &_minRemaining) : minRemaining(_minRemaining) {}
+        findRemaining(VirtualTime &_minRemaining) : minRemaining(_minRemaining) {}
         template<class T>
         void operator()(T& t) const {
-          double tval = t.getRemaining();
+            VirtualTime tval = t.getRemaining();
           if(tval >= 0 && tval < minRemaining) minRemaining = tval;
         }
       private:
-        double &minRemaining;
+        VirtualTime &minRemaining;
     };
 
     /// functor to find the remaining time of a given timer
     int findRemainingByName_index;
     struct findRemainingByName {
-        findRemainingByName(TimerGroup<timerTypes> &_group, std::string &_name, double &_remaining)
+        findRemainingByName(TimerGroup<timerTypes> &_group, std::string &_name, VirtualTime &_remaining)
         : group(_group),
           name(_name),
           remaining(_remaining)
@@ -190,12 +191,12 @@ class TimerGroup {
       private:
         TimerGroup<timerTypes> &group;
         std::string &name;
-        double &remaining;
+        VirtualTime &remaining;
     };
 
-    /// functor to advance timers by the given milliseconds
+    /// functor to advance timers by the given time
     struct advanceTimer {
-        advanceTimer(double _tval, bool &_hasFired) : tval(_tval), hasFired(_hasFired) {}
+        advanceTimer(VirtualTime _tval, bool &_hasFired) : tval(_tval), hasFired(_hasFired) {}
         template<class T>
         void operator()(T& t) const {
           bool r;
@@ -203,7 +204,7 @@ class TimerGroup {
           if(r) hasFired = true;
         }
       private:
-        double tval;
+        VirtualTime tval;
         bool &hasFired;
     };
 
@@ -214,7 +215,7 @@ class TimerGroup {
     std::vector<std::string> names;
 
     /// current time
-    double current;
+    VirtualTime current;
 
 };
 
@@ -222,4 +223,4 @@ class TimerGroup {
 }} // namespace mtca4u::VirtualLab
 
 
-#endif /* TIMER_H */
+#endif /* TIMERGROUP_H */
