@@ -448,25 +448,25 @@ void VirtualDeviceTest::testReadWriteEvents() {
   device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
   data = 120;
   BOOST_CHECK( device->writeCount == 0 );
-  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->write(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->writeCount == 1 );
-  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->write(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->writeCount == 2 );
 
   // read from register
   BOOST_CHECK( device->readCount == 0 );
-  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->read(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->readCount == 1 );
-  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->read(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->readCount == 2 );
 
   // write to muxed register
   device->_registerMapping->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA", elem, "APP0");
   data = 120;
   BOOST_CHECK( device->writeMuxedCount == 0 );
-  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->write(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->writeMuxedCount == 1 );
-  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->write(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->writeMuxedCount == 2 );
 
 
@@ -487,18 +487,18 @@ void VirtualDeviceTest::testGuards() {
   device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
   data = 42;
   BOOST_CHECK( device->write42Count == 0 );
-  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->write(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->write42Count == 1 );
-  device->write(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->write(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->write42Count == 2 );
 
   // read from register with the flag set, so the normal guard is passed
   device->someFlag = true;
   device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
   BOOST_CHECK( device->readWithFlagCount == 0 );
-  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->read(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->readWithFlagCount == 1 );
-  device->read(elem.reg_bar, elem.reg_address, &data, sizeof(int));
+  device->read(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK( device->readWithFlagCount == 2 );
 
   device->close();
