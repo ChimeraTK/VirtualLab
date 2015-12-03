@@ -74,6 +74,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_STATE(DevOpen)
     DECLARE_LOGGING_STATE(SomeIntermediateState)
     DECLARE_LOGGING_STATE(CountingState)
+    DECLARE_LOGGING_STATE(TimerTest)
 
     /// events
     DECLARE_EVENT(onDeviceOpen)
@@ -87,6 +88,8 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_EVENT(startSubMachine)
     DECLARE_EVENT(stopSubMachine)
     DECLARE_EVENT(runDoubleAction)
+    DECLARE_EVENT(setBothTimers)
+    DECLARE_EVENT(goTimerTest)
 
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(countingAction)
@@ -155,6 +158,18 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     };
     timers_ timers;
 
+    /// action to set timer
+    DECLARE_ACTION(doSetTimer)
+      myTimer.set(1*seconds);
+      someCounter++;
+    END_DECLARE_ACTION
+
+    /// action to set both timers
+    DECLARE_ACTION(doSetBothTimers)
+      myTimer.set(1*seconds);
+      mySecondTimer.set(100*seconds);
+    END_DECLARE_ACTION
+
     /// register guard: allow transition if 42 is written
     DECLARE_REGISTER_GUARD(is42Written, value == 42 )
 
@@ -185,6 +200,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       DevOpen() + onDeviceClose() == DevClosed(),
       SomeIntermediateState() + onDeviceClose() == DevClosed(),
       CountingState() + onDeviceClose() == DevClosed(),
+      TimerTest() + onDeviceClose() == DevClosed(),
 
       // start and stop the DAQ
       DevOpen() + onTimer() == SomeIntermediateState(),
@@ -206,7 +222,13 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
       // sub machine
       DevOpen() + startSubMachine() == subMachine(),
-      subMachine() + stopSubMachine() == DevOpen()
+      subMachine() + stopSubMachine() == DevOpen(),
+
+      // set timers via actions
+      DevOpen() + goTimerTest() / doSetTimer() == TimerTest(),
+      TimerTest() + onTimer() / doSetTimer(),
+      TimerTest() + setBothTimers() / doSetBothTimers(),
+      TimerTest() + onSecondTimer() / doSetBothTimers()
     ))
 
 };
@@ -430,8 +452,74 @@ void VirtualDeviceTest::testTimerGroup() {
   device->timers.advance(10*seconds);
   BOOST_CHECK( device->someCounter == 11 );
 
+  // reset device
+  device->close();
+  device->open();
+  device->someCounter = 0;
+
+  // go into timer test mode and check if myTimer is correctly set
+  device->theStateMachine.process_event(VirtualTestDevice::goTimerTest());
+  BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+  BOOST_CHECK( device->mySecondTimer.getRemaining() == -1 );
+  BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+  BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
+  BOOST_CHECK( device->someCounter == 1 );
+
+  // advance to fire myTimer: should set it again
+  for(int i=0; i<5; i++) {
+    device->timers.advance();
+    BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->mySecondTimer.getRemaining() == -1 );
+    BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
+    BOOST_CHECK( device->someCounter == 2+i );
+  }
+  for(int i=0; i<3; i++) {
+    device->timers.advance("myTimer");
+    BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->mySecondTimer.getRemaining() == -1 );
+    BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
+    BOOST_CHECK( device->someCounter == 7+i );
+  }
+  for(int i=0; i<3; i++) {
+    device->timers.advance(1*seconds);
+    BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->mySecondTimer.getRemaining() == -1 );
+    BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == -1 );
+    BOOST_CHECK( device->someCounter == 10+i );
+  }
+
+  // switch to using both timers
+  device->theStateMachine.process_event(VirtualTestDevice::setBothTimers());
+  BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+  BOOST_CHECK( device->mySecondTimer.getRemaining() == 100*seconds );
+  BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+  BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+  BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 100*seconds );
+  BOOST_CHECK( device->someCounter == 12 );
+  device->someCounter = 0;
+
+  // advance mySecondsTimer, should set and fire myTimer 100 times
+  for(int i=0; i<3; i++) {
+    device->timers.advance("mySecondTimer");
+    BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->mySecondTimer.getRemaining() == 100*seconds );
+    BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 100*seconds );
+    BOOST_CHECK( device->someCounter == 100*(i+1) );
+  }
+
   // close the device
   device->close();
+
+
 }
 
 /**********************************************************************************************************************/
