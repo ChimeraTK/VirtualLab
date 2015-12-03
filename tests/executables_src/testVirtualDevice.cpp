@@ -503,9 +503,9 @@ void VirtualDeviceTest::testTimerGroup() {
   BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
   BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 100*seconds );
   BOOST_CHECK( device->someCounter == 12 );
-  device->someCounter = 0;
 
   // advance mySecondsTimer, should set and fire myTimer 100 times
+  device->someCounter = 0;
   for(int i=0; i<3; i++) {
     device->timers.advance("mySecondTimer");
     BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
@@ -514,6 +514,30 @@ void VirtualDeviceTest::testTimerGroup() {
     BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
     BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 100*seconds );
     BOOST_CHECK( device->someCounter == 100*(i+1) );
+  }
+
+  // advance mySecondsTimer in a different way, should set and fire myTimer 100 times
+  device->someCounter = 0;
+  for(int i=0; i<5; i++) {
+    device->timers.advance(100*seconds);
+    BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->mySecondTimer.getRemaining() == 100*seconds );
+    BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 100*seconds );
+    BOOST_CHECK( device->someCounter == 100*(i+1) );
+  }
+
+  // just advance 1000 seconds, should set and fire myTimer 1000 times
+  device->someCounter = 0;
+  for(int i=0; i<3; i++) {
+    device->timers.advance(1000*seconds);
+    BOOST_CHECK( device->myTimer.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->mySecondTimer.getRemaining() == 100*seconds );
+    BOOST_CHECK( device->timers.getRemaining() == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("myTimer") == 1*seconds );
+    BOOST_CHECK( device->timers.getRemaining("mySecondTimer") == 100*seconds );
+    BOOST_CHECK( device->someCounter == 1000*(i+1) );
   }
 
   // close the device
