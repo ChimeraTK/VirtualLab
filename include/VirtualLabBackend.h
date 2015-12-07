@@ -109,7 +109,14 @@ namespace mpl = boost::mpl;
 #define CONNECT_REGISTER_EVENT(eventName, regsterAccessor)                                                      \
   {                                                                                                             \
     if(regsterAccessor.isAddressInRange(bar,address,sizeInBytes)) {                                             \
-      theStateMachine.process_event(eventName ());                                                              \
+      try {                                                                                                     \
+        theStateMachine.process_event(eventName ());                                                            \
+      }                                                                                                         \
+      catch(...) {                                                                                              \
+        std::cerr << "ERROR in VirtualLabBackend: Exception thrown while processing register event. The state " \
+                  << "machine is now in an unusable condition. Make sure to catch all exceptions in your "      \
+                  << "actions!" << std::endl;                                                                   \
+      }                                                                                                         \
     }                                                                                                           \
   }
 
@@ -432,7 +439,14 @@ class VirtualLabBackend : public DummyBackend
           current += tval;
           if(request > 0 && current >= request) {
             request = -1;
-            dev->theStateMachine.process_event( timerEvent() );
+            try {
+              dev->theStateMachine.process_event( timerEvent() );
+            }
+            catch(...) {
+              std::cerr << "ERROR in VirtualLabBackend: Exception thrown while processing timer event. The state "
+                        << "machine is now in an unusable condition. Make sure to catch all exceptions in your "
+                        << "actions!" << std::endl;
+            }
             return true;
           }
           return false;
