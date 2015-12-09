@@ -29,12 +29,12 @@ namespace mtca4u { namespace VirtualLab {
       /// to another source will be severed.
       void connect(const boost::shared_ptr<SignalSource> &source);
 
-      /// [call from backend] obtain value for the given time
+      /// [call from backend/model] obtain value for the given time
       inline double getValue(VirtualTime time) {
         return signalSource->getValue(time);
       }
 
-      /// [call from backend] set maximum time difference a getValue() request may go into the past
+      /// [call from backend/model] set maximum time difference a getValue() request may go into the past
       void setMaxHistoryLength(VirtualTime timeDifference);
 
     protected:
