@@ -8,6 +8,7 @@
 #ifndef VIRTUALDEVICE_H
 #define VIRTUALDEVICE_H
 
+#include <iostream>
 #include <limits>
 #include <string>
 #include <map>

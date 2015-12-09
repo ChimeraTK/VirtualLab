@@ -30,6 +30,15 @@ namespace mtca4u { namespace VirtualLab {
   /*******************************************************************************************************************/
   void SignalSource::setMaxHistoryLength(VirtualTime timeDifference) {
     historyLength = timeDifference;
+    if(!onHistoryLengthChanged.empty()) {
+      onHistoryLengthChanged(timeDifference);
+    }
+  }
+
+  /*******************************************************************************************************************/
+  void SignalSource::setOnHistoryLengthChanged(const boost::function<void(VirtualTime)> &callback)
+  {
+    onHistoryLengthChanged = callback;
   }
 
   /*******************************************************************************************************************/

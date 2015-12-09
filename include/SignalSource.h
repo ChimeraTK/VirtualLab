@@ -10,6 +10,7 @@
 
 #include <map>
 #include <limits>
+#include <sstream>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <mtca4u/Exception.h>
@@ -66,7 +67,10 @@ namespace mtca4u { namespace VirtualLab {
         if(buffer.empty()) return getValueFromCallback(time);
         // check if request goes too far into the past
         if(currentTime - historyLength > time) {
-          throw SignalSourceException("Value request is too far into the past.",SignalSourceException::REQUEST_FAR_PAST);
+          std::stringstream s;
+          s << "Value request is too far into the past: ";
+          s << "requested time = " << time << ", oldest history = " << (currentTime - historyLength);
+          throw SignalSourceException(s.str(),SignalSourceException::REQUEST_FAR_PAST);
         }
         // search in buffer: find the first element after the requested time
         auto it = buffer.upper_bound(time);
@@ -83,6 +87,10 @@ namespace mtca4u { namespace VirtualLab {
       /// [called from sink] set maximum time difference a getValue() request may go into the past
       void setMaxHistoryLength(VirtualTime timeDifference);
 
+      /// [call from model/backend] set callback function to be called when setMaxHistoryLength() is called
+      /// The callback's argument is the new history length.
+      void setOnHistoryLengthChanged(const boost::function<void(VirtualTime)> &callback);
+
     protected:
 
       /// obtain a new value via the callback function and place it into the buffer. Helper for getValue()
@@ -97,6 +105,9 @@ namespace mtca4u { namespace VirtualLab {
 
       /// callback called when new value is needed from backend or model
       boost::function<double(VirtualTime)> valueNeededCallback;
+
+      /// function called when connect() is calleled
+      boost::function<void(VirtualTime)> onHistoryLengthChanged;
 
       /// buffer of values (in dependence of time)
       std::map<VirtualTime,double> buffer;
