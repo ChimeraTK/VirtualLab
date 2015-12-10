@@ -131,6 +131,12 @@ namespace mtca4u { namespace VirtualLab {
         return currentTime;
       }
 
+      /** Obtain the current map of states.
+       */
+      inline const std::map<VirtualTime,STATE>& getAllStates() {
+        return buffer;
+      }
+
     protected:
 
       /// obtain a new state via the callback function and place it into the buffer. Helper for getValue()
