@@ -3,6 +3,8 @@
  *
  *  Created on: Oct 13, 2015
  *      Author: martin.hierholzer@desy.de
+ *
+ *  @todo This class should use the StateVariableSet to implement the history buffer.
  */
 
 #ifndef SIGNALSOURCE_H
