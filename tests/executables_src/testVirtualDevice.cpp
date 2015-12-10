@@ -18,6 +18,7 @@ using namespace mtca4u;
 using namespace mtca4u::VirtualLab;
 
 #define TEST_MAPPING_FILE "test.mapp"
+#define TEST_DMAP_FILE "dummies.dmap"
 
 /**********************************************************************************************************************/
 // forward declaration so we can declare it friend of VirtualTestDevice
@@ -293,7 +294,9 @@ class  DummyDeviceTestSuite : public test_suite {
 /**********************************************************************************************************************/
 test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 {
-  framework::master_test_suite().p_name.value = "AD16 DummyDevice test suite";
+  mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE);
+
+  framework::master_test_suite().p_name.value = "VirtualLab test suite";
   framework::master_test_suite().add(new DummyDeviceTestSuite);
 
   return NULL;
