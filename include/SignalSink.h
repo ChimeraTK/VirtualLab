@@ -22,9 +22,6 @@ namespace mtca4u { namespace VirtualLab {
       /// Constructor: create sink with default value returned when not connected
       SignalSink(double defaultValue);
 
-      /// Constructor: create sink already connected with a source.
-      SignalSink(boost::shared_ptr<SignalSource> &source);
-
       /// [call from VirtualLab setup code] (re-)connect this SignalSink with a SignalSource. Any previous connection
       /// to another source will be severed.
       void connect(const boost::shared_ptr<SignalSource> &source);

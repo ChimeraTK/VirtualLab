@@ -10,11 +10,6 @@
 namespace mtca4u { namespace VirtualLab {
 
   /*******************************************************************************************************************/
-  SignalSink::SignalSink(boost::shared_ptr<SignalSource> &source)
-  : signalSource(source), historyLength(0)
-  {}
-
-  /*******************************************************************************************************************/
   SignalSink::SignalSink(double defaultValue)
   : historyLength(0)
   {
