@@ -253,7 +253,9 @@ REGISTER_BACKEND_TYPE(VirtualTestDevice)
 class VirtualLabTest {
   public:
     VirtualLabTest()
-    : onHistoryLengthChanged_argument(0)
+    : onHistoryLengthChanged_argument(0),
+      onValueNeeded_returnValue(0),
+      onValueNeeded_argument(0)
     {
       std::list<std::string> params;
       params.push_back(TEST_MAPPING_FILE);
@@ -289,12 +291,19 @@ class VirtualLabTest {
     boost::shared_ptr<VirtualTestDevice> device;
     friend class DummyDeviceTestSuite;
 
-    /// callback functions
+    /// callback function for history length changed
     void onHistoryLengthChanged(VirtualTime time) {
       onHistoryLengthChanged_argument = time;
     }
-
     VirtualTime onHistoryLengthChanged_argument;
+
+    /// callback function for value needed
+    double onValueNeeded(VirtualTime time) {
+      onValueNeeded_argument = time;
+      return onValueNeeded_returnValue;
+    }
+    double onValueNeeded_returnValue;
+    VirtualTime onValueNeeded_argument;
 
 
 };
@@ -793,6 +802,13 @@ void VirtualLabTest::testSinkSource() {
   onHistoryLengthChanged_argument = 0;
   sink.setMaxHistoryLength(42*seconds);
   BOOST_CHECK( onHistoryLengthChanged_argument == 42*seconds );
+
+  // test SignalSource's callback function when needing a new value
+  source->setCallback( boost::bind( &VirtualLabTest::onValueNeeded, this, _1 ) );
+  onValueNeeded_returnValue = 234.567;
+  BOOST_CHECK( sink.getValue(101*days) == 234.567 );
+  BOOST_CHECK( onValueNeeded_argument == 101*days );
+
 
 }
 
