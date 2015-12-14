@@ -1,7 +1,9 @@
 #include <tuple>
 #include <algorithm>
+#include <iostream>
 #include <math.h>
 #include <boost/test/included/unit_test.hpp>
+#include <boost/test/output_test_stream.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
@@ -191,6 +193,13 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       subInit() + subEvent() / subCount()
     ))
 
+    /// action throwing an exception
+    DECLARE_EVENT(requestException)
+    DECLARE_STATE(awaitException)
+    DECLARE_ACTION(throwException)
+      throw std::string("This is some exception destroying our state machine!");
+    END_DECLARE_ACTION
+
     /// define the state machine structure
     DECLARE_MAIN_STATE_MACHINE(DevClosed(), (
       // =======================================================================================================
@@ -229,7 +238,11 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       DevOpen() + goTimerTest() / doSetTimer() == TimerTest(),
       TimerTest() + onTimer() / doSetTimer(),
       TimerTest() + setBothTimers() / doSetBothTimers(),
-      TimerTest() + onSecondTimer() / doSetBothTimers()
+      TimerTest() + onSecondTimer() / doSetBothTimers(),
+
+      // exception throwing inside a timer
+      DevOpen() + requestException() == awaitException(),
+      awaitException() + onTimer() / throwException()
     ))
 
 };
@@ -267,6 +280,9 @@ class VirtualLabTest {
     /// test sink and source mechanism stand-alone
     void testSinkSource();
 
+    /// test throwing an exception
+    void testThrowException();
+
 
   private:
     boost::shared_ptr<VirtualTestDevice> device;
@@ -287,7 +303,8 @@ class  VirtualLabTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testTimerGroup, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testReadWriteEvents, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSubMachine, virtualLabTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSinkSource, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testThrowException, virtualLabTest ) );
+
 
     }};
 
@@ -761,5 +778,47 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK( sink.getValue(100*days + 5*milliseconds) == 128. );
   source->feedValue(100*days + 5*milliseconds + 1*picoseconds,129.);
   BOOST_CHECK_THROW( sink.getValue(100*days), SignalSourceException );
+
+}
+
+/**********************************************************************************************************************/
+void VirtualLabTest::testThrowException() {
+  std::cout << "testThrowException" << std::endl;
+
+  // prepare redirecting cerr
+  struct cerr_redirect {
+      cerr_redirect( std::streambuf * new_buffer )
+          : old( std::cerr.rdbuf( new_buffer ) )
+      { }
+
+      ~cerr_redirect( ) {
+          std::cerr.rdbuf( old );
+      }
+
+  private:
+      std::streambuf * old;
+  };
+
+  // need to create our own device for this test, as it destroys the state machine
+  std::list<std::string> params;
+  params.push_back(TEST_MAPPING_FILE);
+  auto myDevice = boost::static_pointer_cast<VirtualTestDevice>( VirtualTestDevice::createInstance("", "1", params) );
+  myDevice->open();
+
+  // go into awaitException state and set the timer (which will trigger the exception action)
+  myDevice->theStateMachine.process_event(VirtualTestDevice::requestException());
+  myDevice->myTimer.set(1*seconds);
+
+  // request exception, should print a warning, so redirect cerr for this test
+  boost::test_tools::output_test_stream output;
+  {
+    cerr_redirect guard( output.rdbuf( ) );
+    myDevice->timers.advance("myTimer");                // this will trigger the exception being caught inside the timer
+  }
+
+  BOOST_CHECK( output.is_equal( "ERROR in VirtualLabBackend: Exception thrown while processing timer event. The state machine is now in an unusable condition. Make sure to catch all exceptions in your actions!\n" ) );
+
+  // close device
+  myDevice->close();
 
 }
