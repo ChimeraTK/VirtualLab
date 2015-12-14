@@ -40,10 +40,10 @@ namespace mtca4u { namespace VirtualLab {
     public:
 
       StateVariableSet()
-      : maxGap(0),
+      : maxGap(std::numeric_limits<VirtualTime>::max()),
         timeTolerance(0),
         historyLength(0),
-        currentTime(0)
+        currentTime(std::numeric_limits<VirtualTime>::min())
       {
       }
 
@@ -51,9 +51,10 @@ namespace mtca4u { namespace VirtualLab {
        *
        *  It is mandatory to set the initial state before the first call to getState().
        */
-      void setInitialState(STATE &state) {
+      void setInitialState(const STATE &state) {
         buffer.clear();
         buffer[0] = state;
+        currentTime = 0;
       }
 
       /** Set callback function which will compute a new state for a given time.
@@ -70,7 +71,7 @@ namespace mtca4u { namespace VirtualLab {
       /** Set maximum time gap. If a state further into the future of the latest computed state than the maximum gap
        *  time is requested, intermediate states will be computed so that no states are further apart than the gap.
        *
-       *  It is mandatory to configure this gap.
+       *  If the gap is not set, intermediate states are never computed
        */
       void setMaximumGap(VirtualTime time) {
         maxGap = time;
@@ -78,7 +79,7 @@ namespace mtca4u { namespace VirtualLab {
 
       /** Set maximum time difference a getValue() request may go into the past.
        *
-       *  It is mandatory to configure the history length.
+       *  If the history length is not set, no history is kept and only the latest state is retained.
        */
       void setMaxHistoryLength(VirtualTime timeDifference) {
         historyLength = timeDifference;
@@ -95,6 +96,8 @@ namespace mtca4u { namespace VirtualLab {
 
       /// Obtain the state for the given time.
       inline const STATE& getState(VirtualTime time) {
+        // check if time is the current time and return the latest element
+        if(time >= currentTime && time <= currentTime + timeTolerance) return getLatestState();
         // search in buffer: find the first element after the requested time
         auto it = buffer.upper_bound(time);
         // if this is the first element in the buffer, request goes too far into the past
@@ -109,7 +112,7 @@ namespace mtca4u { namespace VirtualLab {
         // decrement to get the most recent sample before the requested time
         --it;
         // if sample is too old, request one via callback
-        if(it->first < time - timeTolerance) return getValueFromCallback(time);
+        if(time > it->first + timeTolerance) return getValueFromCallback(time);
         // return value from buffer
         return it->second;
       }

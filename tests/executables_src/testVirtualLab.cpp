@@ -13,6 +13,7 @@
 #include <mtca4u/Device.h>
 #include "VirtualLabBackend.h"
 #include "SignalSink.h"
+#include "StateVariableSet.h"
 
 using namespace boost::unit_test_framework;
 
@@ -286,6 +287,9 @@ class VirtualLabTest {
     /// test throwing an exception
     void testThrowException();
 
+    /// test the StateVariableSet
+    void testStateVariableSet();
+
 
   private:
     boost::shared_ptr<VirtualTestDevice> device;
@@ -305,6 +309,14 @@ class VirtualLabTest {
     double onValueNeeded_returnValue;
     VirtualTime onValueNeeded_argument;
 
+    /// callback function to compute states (StateVariableSet)
+    int onCompute(VirtualTime time) {
+      onCompute_argument = time;
+      return onCompute_returnValue;
+    }
+    int onCompute_returnValue;
+    VirtualTime onCompute_argument;
+
 
 };
 
@@ -322,7 +334,7 @@ class  VirtualLabTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSubMachine, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSinkSource, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testThrowException, virtualLabTest ) );
-
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testStateVariableSet, virtualLabTest ) );
 
     }};
 
@@ -809,7 +821,6 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK( sink.getValue(101*days) == 234.567 );
   BOOST_CHECK( onValueNeeded_argument == 101*days );
 
-
 }
 
 /**********************************************************************************************************************/
@@ -851,5 +862,38 @@ void VirtualLabTest::testThrowException() {
 
   // close device
   myDevice->close();
+
+}
+
+/**********************************************************************************************************************/
+void VirtualLabTest::testStateVariableSet() {
+  std::cout << "testStateVariableSet" << std::endl;
+
+  // a simple "set" with a single integer
+  StateVariableSet<int> simpleState;
+
+  // check for exception if no initial state was set
+  BOOST_CHECK_THROW( simpleState.getState(0), StateVariableSetException );
+
+  // set initial state and get it back
+  simpleState.setInitialState(42);
+  BOOST_CHECK( simpleState.getState(0) == 42 );
+  BOOST_CHECK( simpleState.getLatestState() == 42 );
+
+  // check for exception (thrown by boost) if state is not available and compute function ist not set
+  BOOST_CHECK_THROW( simpleState.getState(1), std::runtime_error );
+
+  // set tolerance to 1 and get state for t=1 again (same as for t=0 then), t=2 must still fail
+  simpleState.setTimeTolerance(1);
+  BOOST_CHECK( simpleState.getState(1) == 42 );
+  BOOST_CHECK_THROW( simpleState.getState(2), std::runtime_error );
+
+  // same with bigger tolerance
+  simpleState.setTimeTolerance(1*seconds);
+  BOOST_CHECK( simpleState.getState(1*seconds) == 42 );
+  BOOST_CHECK_THROW( simpleState.getState(1*seconds + 1), std::runtime_error );
+
+  // set compute function
+  simpleState.setComputeFunction( boost::bind(&VirtualLabTest::onCompute, this, _1) );
 
 }
