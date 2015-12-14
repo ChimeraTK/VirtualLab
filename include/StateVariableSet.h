@@ -41,7 +41,7 @@ namespace mtca4u { namespace VirtualLab {
 
       StateVariableSet()
       : maxGap(std::numeric_limits<VirtualTime>::max()),
-        timeTolerance(0),
+        timeTolerance(1),
         historyLength(0),
         currentTime(std::numeric_limits<VirtualTime>::min())
       {
@@ -71,7 +71,8 @@ namespace mtca4u { namespace VirtualLab {
       /** Set maximum time gap. If a state further into the future of the latest computed state than the maximum gap
        *  time is requested, intermediate states will be computed so that no states are further apart than the gap.
        *
-       *  If the gap is not set, intermediate states are never computed
+       *  If the gap is not set, intermediate states are never computed. The maximum gap must be larger than the
+       *  time tolerance to have an effect.
        */
       void setMaximumGap(VirtualTime time) {
         maxGap = time;
@@ -79,16 +80,18 @@ namespace mtca4u { namespace VirtualLab {
 
       /** Set maximum time difference a getValue() request may go into the past.
        *
-       *  If the history length is not set, no history is kept and only the latest state is retained.
+       *  If the history length is not set, no history is kept and only the latest state is retained. The history
+       *  length must be larger then the time tolerance to have an effect and should normally be larger then the
+       *  maximum gap.
        */
       void setMaxHistoryLength(VirtualTime timeDifference) {
         historyLength = timeDifference;
       }
 
-      /** Set time tolerance. A value for the time T will be used when a value for the time T+tolerance is requested.
-       *  It is not possible to have two states closer together in time than this tolerance.
+      /** Set time tolerance. A value for the time T will be used when a value for a time < T+tolerance (and > T) is
+       *  requested. It is not possible to have two states closer together in time than this tolerance.
        *
-       *  Setting the tolerance is optional, it will default to 0.
+       *  Setting the tolerance is optional, it will default to 1 (i.e. no tolerance). The tolerance must be > 0.
        */
       void setTimeTolerance(VirtualTime time) {
         timeTolerance = time;
@@ -97,7 +100,7 @@ namespace mtca4u { namespace VirtualLab {
       /// Obtain the state for the given time.
       inline const STATE& getState(VirtualTime time) {
         // check if time is the current time and return the latest element
-        if(time >= currentTime && time <= currentTime + timeTolerance) return getLatestState();
+        if(time >= currentTime && time < currentTime + timeTolerance) return getLatestState();
         // search in buffer: find the first element after the requested time
         auto it = buffer.upper_bound(time);
         // if this is the first element in the buffer, request goes too far into the past
@@ -112,7 +115,7 @@ namespace mtca4u { namespace VirtualLab {
         // decrement to get the most recent sample before the requested time
         --it;
         // if sample is too old, request one via callback
-        if(time > it->first + timeTolerance) return getValueFromCallback(time);
+        if(time >= it->first + timeTolerance) return getValueFromCallback(time);
         // return value from buffer
         return it->second;
       }
@@ -145,16 +148,12 @@ namespace mtca4u { namespace VirtualLab {
       /// obtain a new state via the callback function and place it into the buffer. Helper for getValue()
       inline const STATE& getValueFromCallback(VirtualTime time) {
         /*
-         * If request goes into the past (w.r.t. currentTime), erase newer states to force recomputing them. This is
+         * If request goes into the past (w.r.t. currentTime), erase newer states to force recomputing them.
          */
         if(time < currentTime) {
           auto firstToDelete = buffer.upper_bound(time);
-          if(firstToDelete == buffer.begin()) {
-            std::stringstream s;
-            s << "Value request is too far into the past: ";
-            s << "requested time = " << time << ", oldest history = " << (buffer.begin()->first);
-            throw StateVariableSetException(s.str(),StateVariableSetException::REQUEST_FAR_PAST);
-          }
+          // Note: getState() already ensures that the request does not go before the first map element, so we are
+          // never deleting the entire map here.
           buffer.erase(firstToDelete, buffer.end());
           currentTime = buffer.rbegin()->first;
         }
@@ -168,7 +167,8 @@ namespace mtca4u { namespace VirtualLab {
 
         // Loop over the time in nSteps steps. The first step is potentially smaller, all consequtive steps are
         // maxGap big.
-        for(VirtualTime t = time-(nSteps-1)*maxGap; t <= time; t += maxGap) {
+        for(unsigned int i=0; i<nSteps; i++) {
+          VirtualTime t = time-(nSteps-1)*maxGap + i*maxGap;
 
           // obtain the new state
           STATE state = compute(t);
