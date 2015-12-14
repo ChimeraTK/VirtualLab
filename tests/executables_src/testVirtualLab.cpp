@@ -303,6 +303,7 @@ class  VirtualLabTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testTimerGroup, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testReadWriteEvents, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSubMachine, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSinkSource, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testThrowException, virtualLabTest ) );
 
 
