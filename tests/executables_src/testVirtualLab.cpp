@@ -22,7 +22,7 @@ using namespace mtca4u::VirtualLab;
 
 /**********************************************************************************************************************/
 // forward declaration so we can declare it friend of VirtualTestDevice
-class VirtualDeviceTest;
+class VirtualLabTest;
 
 /**********************************************************************************************************************/
 /** The VirtualTestDevice is a VirtualDevice implementation to test the framework
@@ -31,7 +31,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 {
   public:
 
-    friend class VirtualDeviceTest;
+    friend class VirtualLabTest;
 
     CONSTRUCTOR(VirtualTestDevice,
       someCounter(0),
@@ -154,7 +154,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     /// derived timer group class to make the test class a friend
     class timers_ : public timers___ {
       public:
-        friend class VirtualDeviceTest;
+        friend class VirtualLabTest;
         timers_(dummyDeviceType *_dev) : timers___(_dev) {};
     };
     timers_ timers;
@@ -237,9 +237,9 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 REGISTER_BACKEND_TYPE(VirtualTestDevice)
 
 /**********************************************************************************************************************/
-class VirtualDeviceTest {
+class VirtualLabTest {
   public:
-    VirtualDeviceTest()
+    VirtualLabTest()
     {
       std::list<std::string> params;
       params.push_back(TEST_MAPPING_FILE);
@@ -276,18 +276,18 @@ class VirtualDeviceTest {
 };
 
 /**********************************************************************************************************************/
-class  DummyDeviceTestSuite : public test_suite {
+class  VirtualLabTestSuite : public test_suite {
   public:
-    DummyDeviceTestSuite() : test_suite("DummyDevice test suite") {
-      boost::shared_ptr<VirtualDeviceTest> dummyDeviceTest( new VirtualDeviceTest );
+    VirtualLabTestSuite() : test_suite("VirtualLab test suite") {
+      boost::shared_ptr<VirtualLabTest> virtualLabTest( new VirtualLabTest );
 
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testDevOpenClose, dummyDeviceTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testActions, dummyDeviceTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testGuards, dummyDeviceTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testTimerGroup, dummyDeviceTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testReadWriteEvents, dummyDeviceTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testSubMachine, dummyDeviceTest ) );
-      add( BOOST_CLASS_TEST_CASE( &VirtualDeviceTest::testSinkSource, dummyDeviceTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testDevOpenClose, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testActions, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testGuards, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testTimerGroup, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testReadWriteEvents, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSubMachine, virtualLabTest ) );
+      add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testSinkSource, virtualLabTest ) );
 
     }};
 
@@ -297,13 +297,13 @@ test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
   mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE);
 
   framework::master_test_suite().p_name.value = "VirtualLab test suite";
-  framework::master_test_suite().add(new DummyDeviceTestSuite);
+  framework::master_test_suite().add(new VirtualLabTestSuite);
 
   return NULL;
 }
 
 /**********************************************************************************************************************/
-void VirtualDeviceTest::testDevOpenClose() {
+void VirtualLabTest::testDevOpenClose() {
   std::cout << "testDevOpenClose" << std::endl;
 
   // open and close the device and check the states
@@ -327,7 +327,7 @@ void VirtualDeviceTest::testDevOpenClose() {
 }
 
 /**********************************************************************************************************************/
-void VirtualDeviceTest::testTimerGroup() {
+void VirtualLabTest::testTimerGroup() {
   std::cout << "testTimerGroup" << std::endl;
 
   // check if name vector is correctly initialised
@@ -550,7 +550,7 @@ void VirtualDeviceTest::testTimerGroup() {
 }
 
 /**********************************************************************************************************************/
-void VirtualDeviceTest::testReadWriteEvents() {
+void VirtualLabTest::testReadWriteEvents() {
   int data;
   RegisterInfoMap::RegisterInfo elem;
 
@@ -589,7 +589,7 @@ void VirtualDeviceTest::testReadWriteEvents() {
 }
 
 /**********************************************************************************************************************/
-void VirtualDeviceTest::testGuards() {
+void VirtualLabTest::testGuards() {
   int data;
   RegisterInfoMap::RegisterInfo elem;
 
@@ -620,7 +620,7 @@ void VirtualDeviceTest::testGuards() {
 }
 
 /**********************************************************************************************************************/
-void VirtualDeviceTest::testSubMachine() {
+void VirtualLabTest::testSubMachine() {
   std::cout << "testSubMachine" << std::endl;
 
   // open device
@@ -668,7 +668,7 @@ void VirtualDeviceTest::testSubMachine() {
 }
 
 /**********************************************************************************************************************/
-void VirtualDeviceTest::testActions() {
+void VirtualLabTest::testActions() {
   std::cout << "testActions" << std::endl;
 
   // open device
@@ -689,7 +689,7 @@ void VirtualDeviceTest::testActions() {
 }
 
 /**********************************************************************************************************************/
-void VirtualDeviceTest::testSinkSource() {
+void VirtualLabTest::testSinkSource() {
   std::cout << "testSinkSource" << std::endl;
 
   // test constant source
