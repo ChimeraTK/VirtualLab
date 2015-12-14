@@ -23,6 +23,9 @@ using namespace mtca4u::VirtualLab;
 #define TEST_MAPPING_FILE "test.mapp"
 #define TEST_DMAP_FILE "dummies.dmap"
 
+// instantiate template class to get a correct coverage report
+template class mtca4u::VirtualLab::StateVariableSet<int>;
+
 /**********************************************************************************************************************/
 // forward declaration so we can declare it friend of VirtualTestDevice
 class VirtualLabTest;
@@ -256,7 +259,10 @@ class VirtualLabTest {
     VirtualLabTest()
     : onHistoryLengthChanged_argument(0),
       onValueNeeded_returnValue(0),
-      onValueNeeded_argument(0)
+      onValueNeeded_argument(0),
+      onCompute_returnValue(0),
+      onCompute_returnValue_increment(0),
+      onCompute_argument(0)
     {
       std::list<std::string> params;
       params.push_back(TEST_MAPPING_FILE);
@@ -311,10 +317,13 @@ class VirtualLabTest {
 
     /// callback function to compute states (StateVariableSet)
     int onCompute(VirtualTime time) {
+      std::cout << "onCompute(" << time << ")" << std::endl;
       onCompute_argument = time;
+      onCompute_returnValue += onCompute_returnValue_increment;
       return onCompute_returnValue;
     }
     int onCompute_returnValue;
+    int onCompute_returnValue_increment;
     VirtualTime onCompute_argument;
 
 
@@ -874,26 +883,170 @@ void VirtualLabTest::testStateVariableSet() {
 
   // check for exception if no initial state was set
   BOOST_CHECK_THROW( simpleState.getState(0), StateVariableSetException );
+  BOOST_CHECK( simpleState.getAllStates().size() == 0 );
 
   // set initial state and get it back
   simpleState.setInitialState(42);
+  BOOST_CHECK( simpleState.getAllStates().size() == 1 );
   BOOST_CHECK( simpleState.getState(0) == 42 );
   BOOST_CHECK( simpleState.getLatestState() == 42 );
+  BOOST_CHECK( simpleState.getLatestTime() == 0 );
 
   // check for exception (thrown by boost) if state is not available and compute function ist not set
   BOOST_CHECK_THROW( simpleState.getState(1), std::runtime_error );
+  BOOST_CHECK( simpleState.getLatestTime() == 0 );
 
   // set tolerance to 1 and get state for t=1 again (same as for t=0 then), t=2 must still fail
-  simpleState.setTimeTolerance(1);
+  simpleState.setTimeTolerance(2);
   BOOST_CHECK( simpleState.getState(1) == 42 );
   BOOST_CHECK_THROW( simpleState.getState(2), std::runtime_error );
+  BOOST_CHECK( simpleState.getLatestTime() == 0 );
 
   // same with bigger tolerance
   simpleState.setTimeTolerance(1*seconds);
-  BOOST_CHECK( simpleState.getState(1*seconds) == 42 );
-  BOOST_CHECK_THROW( simpleState.getState(1*seconds + 1), std::runtime_error );
+  BOOST_CHECK( simpleState.getState(1*seconds-1) == 42 );
+  BOOST_CHECK_THROW( simpleState.getState(1*seconds), std::runtime_error );
+  BOOST_CHECK( simpleState.getLatestTime() == 0 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 1 );
 
   // set compute function
   simpleState.setComputeFunction( boost::bind(&VirtualLabTest::onCompute, this, _1) );
+
+  // obtain a value using the compute function
+  onCompute_returnValue = 12345;
+  BOOST_CHECK( simpleState.getState(2*seconds) == 12345 );
+  BOOST_CHECK( onCompute_argument == 2*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 2*seconds );
+  BOOST_CHECK( simpleState.getAllStates().size() == 1 );
+
+  // obtain a value within the tolerance of the previous (no compute function called)
+  onCompute_returnValue = 666;
+  BOOST_CHECK( simpleState.getState(3*seconds-1) == 12345 );
+  BOOST_CHECK( onCompute_argument == 2*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 2*seconds );
+
+  // go beyond tolerance
+  BOOST_CHECK( simpleState.getState(3*seconds) == 666 );
+  BOOST_CHECK( onCompute_argument == 3*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 3*seconds );
+
+  // go into past without history length set
+  BOOST_CHECK_THROW( simpleState.getState(0), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(3*seconds-1), StateVariableSetException );
+  BOOST_CHECK( simpleState.getLatestTime() == 3*seconds );
+  BOOST_CHECK( simpleState.getAllStates().size() == 1 );
+
+  // set history length and test it
+  simpleState.setMaxHistoryLength(10*seconds);
+
+  onCompute_returnValue = 777;
+  BOOST_CHECK( simpleState.getState(4*seconds) == 777 );
+  BOOST_CHECK( onCompute_argument == 4*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 4*seconds );
+  BOOST_CHECK( simpleState.getState(3*seconds) == 666 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 2 );
+
+  onCompute_returnValue = 888;
+  BOOST_CHECK( simpleState.getState(13*seconds) == 888 );
+  BOOST_CHECK( onCompute_argument == 13*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 13*seconds );
+  BOOST_CHECK( simpleState.getState(3*seconds) == 666 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 3 );
+
+  onCompute_returnValue = 999;
+  simpleState.setTimeTolerance(1);
+  BOOST_CHECK( simpleState.getState(13*seconds+1) == 999 );
+  BOOST_CHECK( onCompute_argument == 13*seconds+1 );
+  BOOST_CHECK( simpleState.getLatestTime() == 13*seconds+1 );
+  BOOST_CHECK_THROW( simpleState.getState(3*seconds), StateVariableSetException );
+  BOOST_CHECK( simpleState.getAllStates().size() == 3 );
+
+  // test history length shorter than tolerance (a rather pointless configuration...)
+  simpleState.setTimeTolerance(1*seconds);
+  simpleState.setMaxHistoryLength(1*milliseconds);
+
+  onCompute_returnValue = 100;
+  BOOST_CHECK( simpleState.getState(100*seconds) == 100 );
+  BOOST_CHECK( onCompute_argument == 100*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 100*seconds );
+  BOOST_CHECK_THROW( simpleState.getState(13*seconds+1), StateVariableSetException );
+
+  onCompute_returnValue = 101;
+  BOOST_CHECK( simpleState.getState(100*seconds + 1*milliseconds - 1) == 100 );
+  BOOST_CHECK( onCompute_argument == 100*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 100*seconds );
+  BOOST_CHECK( simpleState.getState(100*seconds) == 100 );
+
+  BOOST_CHECK( simpleState.getState(101*seconds - 1) == 100 );
+  BOOST_CHECK( onCompute_argument == 100*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 100*seconds );
+  BOOST_CHECK( simpleState.getState(100*seconds) == 100 );
+
+  BOOST_CHECK( simpleState.getState(101*seconds) == 101 );
+  BOOST_CHECK( onCompute_argument == 101*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 101*seconds );
+  BOOST_CHECK_THROW( simpleState.getState(100*seconds), StateVariableSetException );
+
+  // set maximum gap and test it
+  simpleState.setMaximumGap(100*seconds);
+  simpleState.setTimeTolerance(10*seconds);
+  simpleState.setMaxHistoryLength(1000*seconds);
+  onCompute_returnValue = 10;
+  onCompute_returnValue_increment = 1;  // increment by 1 in onCompute() *before* returning the returnValue;
+
+  BOOST_CHECK( simpleState.getState(201*seconds) == 11 );               // single step
+  BOOST_CHECK( onCompute_argument == 201*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 201*seconds );
+
+  BOOST_CHECK( simpleState.getState(401*seconds) == 13 );               // two steps
+  BOOST_CHECK( onCompute_argument == 401*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 401*seconds );
+
+  BOOST_CHECK( simpleState.getState(301*seconds) == 12 );               // intermediate step was already generated
+  BOOST_CHECK( onCompute_argument == 401*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 401*seconds );
+
+  BOOST_CHECK( simpleState.getState(311*seconds-1) == 12 );             // within tolerance of intermediate step
+  BOOST_CHECK( onCompute_argument == 401*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 401*seconds );
+
+  BOOST_CHECK( simpleState.getState(401*seconds) == 13 );               // the latest state should be unaffected
+  BOOST_CHECK( onCompute_argument == 401*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 401*seconds );
+
+  BOOST_CHECK( simpleState.getState(311*seconds) == 14 );               // insert new step
+  BOOST_CHECK( onCompute_argument == 311*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 311*seconds );
+
+  BOOST_CHECK( simpleState.getState(401*seconds) == 15 );               // originally latest state was deleted and will be recomputed here
+  BOOST_CHECK( onCompute_argument == 401*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 401*seconds );
+
+  BOOST_CHECK( simpleState.getState(550*seconds) == 17 );               // non-integer number of steps
+  BOOST_CHECK( onCompute_argument == 550*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 550*seconds );
+
+  BOOST_CHECK( simpleState.getState(450*seconds) == 16 );               // the intermediate step was generated closer to the older step
+  BOOST_CHECK( onCompute_argument == 550*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 550*seconds );
+
+  // test history length shorter than gap
+  simpleState.setMaximumGap(100*seconds);
+  simpleState.setTimeTolerance(10*seconds);
+  simpleState.setMaxHistoryLength(1*seconds);
+
+  BOOST_CHECK( simpleState.getState(350*seconds) == 18 );
+  BOOST_CHECK( onCompute_argument == 350*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 350*seconds );
+  BOOST_CHECK_THROW( simpleState.getState(311*seconds), StateVariableSetException );
+  BOOST_CHECK( simpleState.getAllStates().size() == 1 );
+
+  BOOST_CHECK( simpleState.getState(800*seconds) == 23 );
+  BOOST_CHECK( onCompute_argument == 800*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 800*seconds );
+  BOOST_CHECK_THROW( simpleState.getState(700*seconds), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds-1), StateVariableSetException );
+  BOOST_CHECK( simpleState.getAllStates().size() == 1 );
+
 
 }
