@@ -896,14 +896,14 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK_THROW( simpleState.getState(1), std::runtime_error );
   BOOST_CHECK( simpleState.getLatestTime() == 0 );
 
-  // set tolerance to 1 and get state for t=1 again (same as for t=0 then), t=2 must still fail
-  simpleState.setTimeTolerance(2);
+  // set validity period to 2 and get state for t=1 again (same as for t=0 then), t=2 must still fail
+  simpleState.setValidityPeriod(2);
   BOOST_CHECK( simpleState.getState(1) == 42 );
   BOOST_CHECK_THROW( simpleState.getState(2), std::runtime_error );
   BOOST_CHECK( simpleState.getLatestTime() == 0 );
 
-  // same with bigger tolerance
-  simpleState.setTimeTolerance(1*seconds);
+  // same with bigger validity period
+  simpleState.setValidityPeriod(1*seconds);
   BOOST_CHECK( simpleState.getState(1*seconds-1) == 42 );
   BOOST_CHECK_THROW( simpleState.getState(1*seconds), std::runtime_error );
   BOOST_CHECK( simpleState.getLatestTime() == 0 );
@@ -919,13 +919,13 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getLatestTime() == 2*seconds );
   BOOST_CHECK( simpleState.getAllStates().size() == 1 );
 
-  // obtain a value within the tolerance of the previous (no compute function called)
+  // obtain a value within the validity period of the previous (no compute function called)
   onCompute_returnValue = 666;
   BOOST_CHECK( simpleState.getState(3*seconds-1) == 12345 );
   BOOST_CHECK( onCompute_argument == 2*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 2*seconds );
 
-  // go beyond tolerance
+  // go beyond validity period
   BOOST_CHECK( simpleState.getState(3*seconds) == 666 );
   BOOST_CHECK( onCompute_argument == 3*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 3*seconds );
@@ -954,15 +954,15 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getAllStates().size() == 3 );
 
   onCompute_returnValue = 999;
-  simpleState.setTimeTolerance(1);
+  simpleState.setValidityPeriod(1);
   BOOST_CHECK( simpleState.getState(13*seconds+1) == 999 );
   BOOST_CHECK( onCompute_argument == 13*seconds+1 );
   BOOST_CHECK( simpleState.getLatestTime() == 13*seconds+1 );
   BOOST_CHECK_THROW( simpleState.getState(3*seconds), StateVariableSetException );
   BOOST_CHECK( simpleState.getAllStates().size() == 3 );
 
-  // test history length shorter than tolerance (a rather pointless configuration...)
-  simpleState.setTimeTolerance(1*seconds);
+  // test history length shorter than validity period (a rather pointless configuration...)
+  simpleState.setValidityPeriod(1*seconds);
   simpleState.setMaxHistoryLength(1*milliseconds);
 
   onCompute_returnValue = 100;
@@ -989,7 +989,7 @@ void VirtualLabTest::testStateVariableSet() {
 
   // set maximum gap and test it
   simpleState.setMaximumGap(100*seconds);
-  simpleState.setTimeTolerance(10*seconds);
+  simpleState.setValidityPeriod(10*seconds);
   simpleState.setMaxHistoryLength(1000*seconds);
   onCompute_returnValue = 10;
   onCompute_returnValue_increment = 1;  // increment by 1 in onCompute() *before* returning the returnValue;
@@ -1006,7 +1006,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( onCompute_argument == 401*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 401*seconds );
 
-  BOOST_CHECK( simpleState.getState(311*seconds-1) == 12 );             // within tolerance of intermediate step
+  BOOST_CHECK( simpleState.getState(311*seconds-1) == 12 );             // within validity period of intermediate step
   BOOST_CHECK( onCompute_argument == 401*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 401*seconds );
 
@@ -1032,7 +1032,7 @@ void VirtualLabTest::testStateVariableSet() {
 
   // test history length shorter than gap
   simpleState.setMaximumGap(100*seconds);
-  simpleState.setTimeTolerance(10*seconds);
+  simpleState.setValidityPeriod(10*seconds);
   simpleState.setMaxHistoryLength(1*seconds);
 
   BOOST_CHECK( simpleState.getState(350*seconds) == 18 );

@@ -41,7 +41,7 @@ namespace mtca4u { namespace VirtualLab {
 
       StateVariableSet()
       : maxGap(std::numeric_limits<VirtualTime>::max()),
-        timeTolerance(1),
+        validityPeriod(1),
         historyLength(0),
         currentTime(std::numeric_limits<VirtualTime>::min())
       {
@@ -72,7 +72,7 @@ namespace mtca4u { namespace VirtualLab {
        *  time is requested, intermediate states will be computed so that no states are further apart than the gap.
        *
        *  If the gap is not set, intermediate states are never computed. The maximum gap must be larger than the
-       *  time tolerance to have an effect.
+       *  validity period to have an effect.
        */
       void setMaximumGap(VirtualTime time) {
         maxGap = time;
@@ -81,26 +81,26 @@ namespace mtca4u { namespace VirtualLab {
       /** Set maximum time difference a getValue() request may go into the past.
        *
        *  If the history length is not set, no history is kept and only the latest state is retained. The history
-       *  length must be larger then the time tolerance to have an effect and should normally be larger then the
+       *  length must be larger then the validity period to have an effect and should normally be larger then the
        *  maximum gap.
        */
       void setMaxHistoryLength(VirtualTime timeDifference) {
         historyLength = timeDifference;
       }
 
-      /** Set time tolerance. A value for the time T will be used when a value for a time < T+tolerance (and > T) is
-       *  requested. It is not possible to have two states closer together in time than this tolerance.
+      /** Set validity period. A state for the time T will be used when a state for a time < T+validityPeriod
+       *  (and > T) is requested. It is not possible to have two states closer together in time than this period.
        *
-       *  Setting the tolerance is optional, it will default to 1 (i.e. no tolerance). The tolerance must be > 0.
+       *  Setting the validity period is optional, it will default to 1 (i.e. no effect). The period must be > 0.
        */
-      void setTimeTolerance(VirtualTime time) {
-        timeTolerance = time;
+      void setValidityPeriod(VirtualTime period) {
+        validityPeriod = period;
       }
 
       /// Obtain the state for the given time.
       inline const STATE& getState(VirtualTime time) {
         // check if time is the current time and return the latest element
-        if(time >= currentTime && time < currentTime + timeTolerance) return getLatestState();
+        if(time >= currentTime && time < currentTime + validityPeriod) return getLatestState();
         // search in buffer: find the first element after the requested time
         auto it = buffer.upper_bound(time);
         // if this is the first element in the buffer, request goes too far into the past
@@ -115,7 +115,7 @@ namespace mtca4u { namespace VirtualLab {
         // decrement to get the most recent sample before the requested time
         --it;
         // if sample is too old, request one via callback
-        if(time >= it->first + timeTolerance) return getValueFromCallback(time);
+        if(time >= it->first + validityPeriod) return getValueFromCallback(time);
         // return value from buffer
         return it->second;
       }
@@ -198,8 +198,8 @@ namespace mtca4u { namespace VirtualLab {
       /// maximum gap
       VirtualTime maxGap;
 
-      /// time tolerance
-      VirtualTime timeTolerance;
+      /// validity period
+      VirtualTime validityPeriod;
 
       /// history length
       VirtualTime historyLength;
