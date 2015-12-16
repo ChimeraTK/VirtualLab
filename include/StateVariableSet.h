@@ -143,13 +143,25 @@ namespace mtca4u { namespace VirtualLab {
         return buffer;
       }
 
+      /** Feed a state to the buffer. This can be used to provide values/states outside the compute callback function.
+       *  e.g. if the values are computed in a different context and should be stored for potential later use.
+       *
+       *  If time is < currentTime, newer entries will be removed. After inserting the new entry, the old history will
+       *  be removed as well.
+       */
+      inline void feedValue(VirtualTime time, STATE state) {
+        truncateFuture(time);
+        buffer[time] = state;
+        currentTime = time;
+        truncatePast();
+      }
+
     protected:
 
-      /// obtain a new state via the callback function and place it into the buffer. Helper for getValue()
-      inline const STATE& getValueFromCallback(VirtualTime time) {
-        /*
-         * If request goes into the past (w.r.t. currentTime), erase newer states to force recomputing them.
-         */
+      /** Truncate a future part of the buffer: remove all entries newer then the given time.
+       *  Has no effect, if time >= currentTime/
+       */
+      inline void truncateFuture(VirtualTime time) {
         if(time < currentTime) {
           auto firstToDelete = buffer.upper_bound(time);
           // Note: getState() already ensures that the request does not go before the first map element, so we are
@@ -157,12 +169,26 @@ namespace mtca4u { namespace VirtualLab {
           buffer.erase(firstToDelete, buffer.end());
           currentTime = buffer.rbegin()->first;
         }
+      }
 
-        /*
-         * Propagate the current time until the requested time in steps of maxGap.
-         */
-        // First compute the number of steps
-        // Note: this is rounding-up the integer division (time-CurrentTime)/maxGap
+      /** Truncate old history of the buffer: remove all entries older than currentTime - historyLength.
+       */
+      inline void truncatePast() {
+        // clear old values from history
+        if( buffer.size() > 1 && buffer.begin()->first < (currentTime - historyLength) ) {
+          auto firstToKeep = buffer.upper_bound(currentTime - historyLength - 1);
+          buffer.erase(buffer.begin(), firstToKeep);
+        }
+      }
+
+      /// obtain a new state via the callback function and place it into the buffer. Helper for getValue()
+      inline const STATE& getValueFromCallback(VirtualTime time) {
+
+        // If request goes into the past (w.r.t. currentTime), erase newer states to force recomputing them.
+        truncateFuture(time);
+
+        // Compute the number of steps necessary to reach the requested time, obaying maxGap.
+        // Note: this is effectively rounding-up the integer division (time-CurrentTime)/maxGap
         unsigned int nSteps = (time-currentTime-1)/maxGap+1;
 
         // Loop over the time in nSteps steps. The first step is potentially smaller, all consequtive steps are
@@ -179,11 +205,8 @@ namespace mtca4u { namespace VirtualLab {
 
         }
 
-        // clear old values from history
-        if( buffer.size() > 1 && buffer.begin()->first < (time - historyLength) ) {
-          auto firstToKeep = buffer.upper_bound(time - historyLength - 1);
-          buffer.erase(buffer.begin(), firstToKeep);
-        }
+        // remove old history
+        truncatePast();
 
         // return the new state (do not use buffer[], as it will silently insert new objects if something went wrong)
         return buffer.find(time)->second;
