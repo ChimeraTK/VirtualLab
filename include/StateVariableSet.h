@@ -52,9 +52,7 @@ namespace mtca4u { namespace VirtualLab {
        *  It is mandatory to set the initial state before the first call to getState().
        */
       void setInitialState(const STATE &state) {
-        buffer.clear();
-        buffer[0] = state;
-        currentTime = 0;
+        feedState(0, state);
       }
 
       /** Set callback function which will compute a new state for a given time.
@@ -66,6 +64,12 @@ namespace mtca4u { namespace VirtualLab {
        */
       void setComputeFunction(const boost::function<const STATE(VirtualTime)> &callback) {
         compute = callback;
+      }
+
+      /** Obtain the callback function previously set with setComputeFunction().
+       */
+      const boost::function<const STATE(VirtualTime)>& getComputeFunction() {
+        return compute;
       }
 
       /** Set maximum time gap. If a state further into the future of the latest computed state than the maximum gap
@@ -97,17 +101,17 @@ namespace mtca4u { namespace VirtualLab {
         validityPeriod = period;
       }
 
-      /// Obtain the state for the given time.
+      /// Obtain the state for the given time. time must be >= 0.
       inline const STATE& getState(VirtualTime time) {
         // check if time is the current time and return the latest element
         if(time >= currentTime && time < currentTime + validityPeriod) return getLatestState();
         // search in buffer: find the first element after the requested time
         auto it = buffer.upper_bound(time);
-        // if this is the first element in the buffer, request goes too far into the past
         if(it == buffer.begin())  {
           std::stringstream s;
           s << "Value request is too far into the past: ";
           s << "requested time = " << time << ", oldest history = " << buffer.begin()->first;
+          s << ", current time = " << currentTime;
           throw StateVariableSetException(s.str(),StateVariableSetException::REQUEST_FAR_PAST);
         }
         // if this is end(), a new value needs to be computed
