@@ -11,25 +11,22 @@ namespace mtca4u { namespace VirtualLab {
 
   /*******************************************************************************************************************/
   SignalSource::SignalSource()
-  : valueNeededCallback(NULL),
-    timeTolerance(1),
-    historyLength(1),
-    currentTime(0)
-  {}
-
-  /*******************************************************************************************************************/
-  void SignalSource::setCallback(const boost::function<double(VirtualTime)> &callback) {
-    valueNeededCallback = callback;
+  {
   }
 
   /*******************************************************************************************************************/
-  void SignalSource::setTimeTolerance(VirtualTime time) {
-    timeTolerance = time;
+  void SignalSource::setCallback(const boost::function<double(VirtualTime)> &callback) {
+    buffer.setComputeFunction(callback);
+  }
+
+  /*******************************************************************************************************************/
+  void SignalSource::setValidityPeriod(VirtualTime period) {
+    buffer.setValidityPeriod(period);
   }
 
   /*******************************************************************************************************************/
   void SignalSource::setMaxHistoryLength(VirtualTime timeDifference) {
-    historyLength = timeDifference;
+    buffer.setMaxHistoryLength(timeDifference);
     if(!onHistoryLengthChanged.empty()) {
       onHistoryLengthChanged(timeDifference);
     }
@@ -43,10 +40,11 @@ namespace mtca4u { namespace VirtualLab {
 
   /*******************************************************************************************************************/
   ConstantSignalSource::ConstantSignalSource(double theValue)
-  : value(theValue)
+  : SignalSource(), value(theValue)
   {
-    valueNeededCallback = boost::bind(&ConstantSignalSource::constantCallback, this, _1);
-    timeTolerance = std::numeric_limits<VirtualTime>::max();
+    setCallback(boost::bind(&ConstantSignalSource::constantCallback, this, _1));
+    setValidityPeriod(std::numeric_limits<VirtualTime>::max());
+    buffer.setInitialState(theValue);
   }
 
 }} // namespace mtca4u::VirtuaLab

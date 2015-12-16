@@ -750,23 +750,23 @@ void VirtualLabTest::testSinkSource() {
   // test constant source
   SignalSink sink(42);
   sink.setMaxHistoryLength(20*milliseconds);
-  BOOST_CHECK( sink.getValue(-10*milliseconds) == 42 );
   BOOST_CHECK( sink.getValue(0*milliseconds) == 42 );
   BOOST_CHECK( sink.getValue(10*milliseconds) == 42 );
+  BOOST_CHECK( sink.getValue(42*milliseconds) == 42 );
 
   // re-connect with another constant source
   auto constSource = boost::make_shared<ConstantSignalSource>(120);
   sink.connect( boost::static_pointer_cast<SignalSource>(constSource) );
-  BOOST_CHECK( sink.getValue(-10*milliseconds) == 120 );    // the sink has no history
-  BOOST_CHECK( sink.getValue(0*milliseconds) == 120 );
+  BOOST_CHECK( sink.getValue(0*milliseconds) == 120 );  // the sink has no history
   BOOST_CHECK( sink.getValue(10*milliseconds) == 120 );
+  BOOST_CHECK( sink.getValue(42*milliseconds) == 120 );
 
   // create non-constant source and connect with it
   auto source = boost::make_shared<SignalSource>();
   sink.connect(source);
 
   // nothing in the buffer yet
-  BOOST_CHECK_THROW( sink.getValue(0*milliseconds), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(0*milliseconds), std::runtime_error );
 
   // feed some values to the source and read from sink
   source->feedValue(0*milliseconds,10.);
@@ -778,43 +778,44 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK( sink.getValue(100*microseconds) == 99. );
   BOOST_CHECK( sink.getValue(1*milliseconds) == -30. );
   BOOST_CHECK( sink.getValue(10*milliseconds) == 666. );
-  BOOST_CHECK_THROW( sink.getValue(11*milliseconds), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(11*milliseconds), std::runtime_error );
 
   // add tolerance to the source and test it
-  source->setTimeTolerance(2*milliseconds);
-  BOOST_CHECK_THROW( sink.getValue(-1*picoseconds), SignalSourceException );
+  source->setValidityPeriod(2*milliseconds);
   BOOST_CHECK( sink.getValue(0*milliseconds) == 10. );
-  BOOST_CHECK( sink.getValue(100*microseconds - 1*picoseconds) == 10. );
+  BOOST_CHECK( sink.getValue(100*microseconds - 1) == 10. );
   BOOST_CHECK( sink.getValue(100*microseconds) == 99. );
-  BOOST_CHECK( sink.getValue(1*milliseconds - 1*picoseconds) == 99. );
+  BOOST_CHECK( sink.getValue(1*milliseconds - 1) == 99. );
   BOOST_CHECK( sink.getValue(1*milliseconds) == -30. );
-  BOOST_CHECK( sink.getValue(3*milliseconds) == -30. );
-  BOOST_CHECK_THROW( sink.getValue(3*milliseconds + 1*picoseconds), SignalSourceException );
-  BOOST_CHECK_THROW( sink.getValue(10*milliseconds - 1*picoseconds), SignalSourceException );
+  BOOST_CHECK( sink.getValue(3*milliseconds - 1) == -30. );
+  BOOST_CHECK_THROW( sink.getValue(3*milliseconds), std::runtime_error );
+  source->feedValue(10*milliseconds,666.);      // this value was removed in the last call...
+  BOOST_CHECK_THROW( sink.getValue(10*milliseconds - 1), std::runtime_error );
+  source->feedValue(10*milliseconds,666.);      // this value was removed in the last call...
   BOOST_CHECK( sink.getValue(10*milliseconds) == 666. );
   BOOST_CHECK( sink.getValue(11*milliseconds) == 666. );
-  BOOST_CHECK( sink.getValue(12*milliseconds) == 666. );
-  BOOST_CHECK_THROW( sink.getValue(12*milliseconds + 1*picoseconds), SignalSourceException );
+  BOOST_CHECK( sink.getValue(12*milliseconds - 1) == 666. );
+  BOOST_CHECK_THROW( sink.getValue(12*milliseconds), std::runtime_error );
 
   // check if old values are removed from buffer
-  source->feedValue(20*milliseconds,123.);
+  source->feedValue(20*milliseconds, 123.);
   BOOST_CHECK( sink.getValue(0*milliseconds) == 10. );
-  source->feedValue(20*milliseconds + 1*picoseconds,124.);
+  source->feedValue(20*milliseconds + 1, 124.);
   BOOST_CHECK_THROW( sink.getValue(0*milliseconds), SignalSourceException );
 
   // change history length and check it
   sink.setMaxHistoryLength(5*milliseconds);
-  source->feedValue(25*milliseconds,125.);
+  source->feedValue(25*milliseconds, 125.);
   BOOST_CHECK( sink.getValue(20*milliseconds) == 123. );
-  source->feedValue(25*milliseconds + 1*picoseconds,126.);
+  source->feedValue(25*milliseconds + 1, 126.);
   BOOST_CHECK_THROW( sink.getValue(20*milliseconds), SignalSourceException );
 
   // go to large times and check if it is still working
-  source->feedValue(100*days,127.);
-  source->feedValue(100*days + 5*milliseconds,128.);
+  source->feedValue(100*days, 127.);
+  source->feedValue(100*days + 5*milliseconds, 128.);
   BOOST_CHECK( sink.getValue(100*days) == 127. );
   BOOST_CHECK( sink.getValue(100*days + 5*milliseconds) == 128. );
-  source->feedValue(100*days + 5*milliseconds + 1*picoseconds,129.);
+  source->feedValue(100*days + 5*milliseconds + 1, 129.);
   BOOST_CHECK_THROW( sink.getValue(100*days), SignalSourceException );
 
   // test SignalSource's callback function "onHistoryLengthChanged"

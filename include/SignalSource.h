@@ -3,8 +3,6 @@
  *
  *  Created on: Oct 13, 2015
  *      Author: martin.hierholzer@desy.de
- *
- *  @todo This class should use the StateVariableSet to implement the history buffer.
  */
 
 #ifndef SIGNALSOURCE_H
@@ -18,114 +16,102 @@
 #include <mtca4u/Exception.h>
 
 #include "VirtualTime.h"
+#include "StateVariableSet.h"
 
 
 namespace mtca4u { namespace VirtualLab {
 
-  /// Exception class
+  /**
+   *  Exception class
+   */
   class SignalSourceException : public Exception {
     public:
-      enum {NO_VALUE,REQUEST_FAR_PAST};
+      enum {REQUEST_FAR_PAST};
       SignalSourceException(const std::string &message, unsigned int exceptionID)
       : Exception( message, exceptionID ){}
   };
 
-  /// A SignalSource provides time-dependent signal values to a SignalSink. Objects of this class will normally be
-  /// members of a VirtualLabBackend or a model component.
+  /**
+   *  A SignalSource provides time-dependent signal values to a SignalSink. Objects of this class will normally be
+   *  members of a VirtualLabBackend or a model component.
+   */
   class SignalSource {
 
     public:
 
       SignalSource();
 
-      /// [call from backend/model] set callback function to be called when a new value needs to be computed. The
-      /// callback function must return the new value. The new value will be automatically placed into the buffer.
+      /** [call from backend/model] set callback function to be called when a new value needs to be computed. The
+       *  callback function must return the new value. The new value will be automatically placed into the buffer.
+       *
+       *  It is mandatory to set this callback function!
+       */
       void setCallback(const boost::function<double(VirtualTime)> &callback);
 
-      /// [call from backend/model] set time tolerance. A value for the time T will be used when a value for the time
-      /// T+tolerance is requested. Backends may set this e.g. to the sampling time, since the output value will not
-      /// change during this time. Models may set this e.g. to a fraction of the model's time constant to save computing
-      /// time.
-      void setTimeTolerance(VirtualTime time);
+      /** [call from backend/model] set validity period. A value for the time T will be used when a value for the time
+       *  t < T+period is requested. Backends may set this e.g. to the sampling time, since the output value will not
+       *  change during this time. Models may set this e.g. to a fraction of the model's time constant to save computing
+       *  time.
+       *
+       *  The validity period defaults to 1, which effectively disables the functionality. The provided value must
+       *  be larger than 0.
+       */
+      void setValidityPeriod(VirtualTime period);
 
-      /// [call from backend/model] provide new value for the given time
+      /** DEPRECATED, alias for setValidityPeriod()
+       *  @todo remove after release of version 00.02
+       */
+      void setTimeTolerance(VirtualTime time) {
+        std::cout << "SignalSource::setTimeTolerance(): This function is DEPCRECATED, use setValidityPeriod() instead!" << std::endl;
+        setValidityPeriod(time);
+      }
+
+      /** [call from backend/model] provide new value for the given time
+       */
       inline void feedValue(VirtualTime time, double value) {
-        // save value into buffer
-        buffer[time] = value;
-        // update current time
-        if(time > currentTime) {
-          currentTime = time;
-          // clear old values from history
-          if( buffer.begin()->first < (time - historyLength) ) {
-            auto firstToKeep = buffer.upper_bound(time - historyLength - 1);
-            buffer.erase(buffer.begin(), firstToKeep);
-          }
-        }
+        buffer.feedState(time,value);
       }
 
-      /// [called from sink] obtain value for the given time
+      /** [called from sink] obtain value for the given time. time must be >= 0.
+       */
       inline double getValue(VirtualTime time) {
-        // if buffer is empty, request sample
-        if(buffer.empty()) return getValueFromCallback(time);
-        // check if request goes too far into the past
-        if(currentTime - historyLength > time) {
-          std::stringstream s;
-          s << "Value request is too far into the past: ";
-          s << "requested time = " << time << ", oldest history = " << (currentTime - historyLength);
-          throw SignalSourceException(s.str(),SignalSourceException::REQUEST_FAR_PAST);
+        // not yet initialised: compute the value manually
+        if(buffer.getLatestTime() < 0) {
+          double val = (buffer.getComputeFunction())(time);
+          buffer.feedState(time,val);
         }
-        // search in buffer: find the first element after the requested time
-        auto it = buffer.upper_bound(time);
-        // if this is the first element in the buffer, no sample for the requested time exists
-        if(it == buffer.begin()) return getValueFromCallback(time);
-        // decrement to get the most recent sample before the requested time
-        --it;
-        // if no sample found or sample is too old, request one via callback
-        if(it->first < time - timeTolerance) return getValueFromCallback(time);
-        // return value from buffer
-        return it->second;
+
+        // get value from buffer
+        try {
+          return buffer.getState(time);
+        }
+        catch(StateVariableSetException &e) {
+          throw SignalSourceException(e.what(), SignalSourceException::REQUEST_FAR_PAST);
+        }
       }
 
-      /// [called from sink] set maximum time difference a getValue() request may go into the past
+      /** [called from sink] set maximum time difference a getValue() request may go into the past
+       */
       void setMaxHistoryLength(VirtualTime timeDifference);
 
-      /// [call from model/backend] set callback function to be called when setMaxHistoryLength() is called
-      /// The callback's argument is the new history length.
+      /** [call from model/backend] set callback function to be called when setMaxHistoryLength() is called
+       *  The callback's argument is the new history length.
+       */
       void setOnHistoryLengthChanged(const boost::function<void(VirtualTime)> &callback);
 
     protected:
 
-      /// obtain a new value via the callback function and place it into the buffer. Helper for getValue()
-      inline double getValueFromCallback(VirtualTime time) {
-        if(valueNeededCallback == NULL) {
-          throw SignalSourceException("No value matching the given time found.",SignalSourceException::NO_VALUE);
-        }
-        double val = valueNeededCallback(time);
-        feedValue(time, val);
-        return val;
-      }
-
-      /// callback called when new value is needed from backend or model
-      boost::function<double(VirtualTime)> valueNeededCallback;
-
-      /// function called when connect() is calleled
+      /// function called when connect() is called
       boost::function<void(VirtualTime)> onHistoryLengthChanged;
 
-      /// buffer of values (in dependence of time)
-      std::map<VirtualTime,double> buffer;
-
-      /// time tolerance
-      VirtualTime timeTolerance;
-
-      /// history length
-      VirtualTime historyLength;
-
-      /// time of last fed sample
-      VirtualTime currentTime;
+      /// store value in a StateVariableSet with just a double as type
+      StateVariableSet<double> buffer;
 
   };
 
-  /// A simple SignalSource providing just constant values
+  /**
+   * A simple SignalSource providing just constant values
+   */
   class ConstantSignalSource : public SignalSource {
 
     public:
