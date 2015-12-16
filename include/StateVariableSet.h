@@ -148,8 +148,10 @@ namespace mtca4u { namespace VirtualLab {
        *
        *  If time is < currentTime, newer entries will be removed. After inserting the new entry, the old history will
        *  be removed as well.
+       *
+       *  Note: No check is performed if the gap to the previous state is larger than the maximum gap!
        */
-      inline void feedValue(VirtualTime time, STATE state) {
+      inline void feedState(VirtualTime time, STATE state) {
         truncateFuture(time);
         buffer[time] = state;
         currentTime = time;

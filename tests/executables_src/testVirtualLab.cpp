@@ -317,7 +317,6 @@ class VirtualLabTest {
 
     /// callback function to compute states (StateVariableSet)
     int onCompute(VirtualTime time) {
-      std::cout << "onCompute(" << time << ")" << std::endl;
       onCompute_argument = time;
       onCompute_returnValue += onCompute_returnValue_increment;
       return onCompute_returnValue;
@@ -1047,6 +1046,50 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK_THROW( simpleState.getState(700*seconds), StateVariableSetException );
   BOOST_CHECK_THROW( simpleState.getState(800*seconds-1), StateVariableSetException );
   BOOST_CHECK( simpleState.getAllStates().size() == 1 );
+
+  // test feedState()
+  simpleState.setMaximumGap(10*seconds);
+  simpleState.setValidityPeriod(1*seconds);
+  simpleState.setMaxHistoryLength(100*seconds);
+
+  simpleState.feedState(900*seconds - 1, 1234);                 // simply feeding a state should keep the previous one
+  BOOST_CHECK( simpleState.getState(800*seconds) == 23 );
+  BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 2 );
+
+  simpleState.feedState(901*seconds, 2345);                     // old state should be removed
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds), StateVariableSetException );
+  BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
+  BOOST_CHECK( simpleState.getState(901*seconds) == 2345 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 2 );
+
+  simpleState.feedState(910*seconds, 3456);                     // adding a 3rd state
+  BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
+  BOOST_CHECK( simpleState.getState(901*seconds) == 2345 );
+  BOOST_CHECK( simpleState.getState(910*seconds) == 3456 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 3 );
+
+  simpleState.feedState(930*seconds, 4567);                     // 4th state with a too big gap (no check performed here)
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds), StateVariableSetException );
+  BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
+  BOOST_CHECK( simpleState.getState(901*seconds) == 2345 );
+  BOOST_CHECK( simpleState.getState(910*seconds) == 3456 );
+  BOOST_CHECK( simpleState.getState(930*seconds) == 4567 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 4 );
+
+  simpleState.feedState(905*seconds, 666);                      // add intermediate step, removing future steps
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds), StateVariableSetException );
+  BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
+  BOOST_CHECK( simpleState.getState(901*seconds) == 2345 );
+  BOOST_CHECK( simpleState.getState(905*seconds) == 666 );
+  BOOST_CHECK( simpleState.getAllStates().size() == 3 );
+  onCompute_returnValue = 777;
+  BOOST_CHECK( simpleState.getState(910*seconds) == 778 );
+  BOOST_CHECK( onCompute_argument == 910*seconds );
+  BOOST_CHECK( simpleState.getAllStates().size() == 4 );
+  BOOST_CHECK( simpleState.getState(930*seconds) == 780 );      // this will fill the gap
+  BOOST_CHECK( onCompute_argument == 930*seconds );
+  BOOST_CHECK( simpleState.getAllStates().size() == 6 );
 
 
 }
