@@ -66,6 +66,15 @@ namespace mtca4u { namespace VirtualLab {
         setValidityPeriod(time);
       }
 
+      /** [call from backend/model] Set maximum time gap. If a value further into the future of the latest computed
+       *  value than the maximum gap time is requested, intermediate values will be computed so that no values are
+       *  further apart than the gap.
+       *
+       *  If the gap is not set, intermediate states are never computed. The maximum gap must be larger than the
+       *  validity period to have an effect.
+       */
+      void setMaximumGap(VirtualTime maxGap);
+
       /** [call from backend/model] provide new value for the given time
        */
       inline void feedValue(VirtualTime time, double value) {
@@ -88,6 +97,23 @@ namespace mtca4u { namespace VirtualLab {
         catch(StateVariableSetException &e) {
           throw SignalSourceException(e.what(), SignalSourceException::REQUEST_FAR_PAST);
         }
+      }
+
+      /** Obtain the latest computed value.
+       *  This function will usually be called inside the compute function (see setCallback()) to have a basis
+       *  for the computations. Use getLatestTime() to obtain the time of the latest state.
+       *
+       *  Guarantee: When this function is called inside the compute function, the returned value will be in the past
+       *  and not older than the gap configured with setMaximumGap().
+       */
+      inline double getLatestValue() {
+        return buffer.getLatestState();
+      }
+
+      /** Obtain the time of latest computed value. See getLatestValue() for further comments.
+       */
+      inline VirtualTime getLatestTime() {
+        return buffer.getLatestTime();
       }
 
       /** [called from sink] set maximum time difference a getValue() request may go into the past
