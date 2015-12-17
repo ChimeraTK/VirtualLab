@@ -63,7 +63,7 @@ if(TESTING_IS_ENABLED)
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(excutableName ${perftestExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${perftestExecutableSrcFile})
-    target_link_libraries(${excutableName} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
+    target_link_libraries(${excutableName} ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
   endforeach( perftestExecutableSrcFile )
 
   #The make coverage command is only available in debug mode
