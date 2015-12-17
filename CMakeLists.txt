@@ -54,7 +54,7 @@ if(TESTING_IS_ENABLED)
     #NAME_WE means the base name without path and (longest) extension
     get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
     add_executable(${excutableName} ${testExecutableSrcFile})
-    target_link_libraries(${excutableName} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} ${PROJECT_NAME})
+    target_link_libraries(${excutableName} ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES} ${PYTHON_LIBRARIES})
     add_test(${excutableName} ${excutableName})
   endforeach( testExecutableSrcFile )
 
