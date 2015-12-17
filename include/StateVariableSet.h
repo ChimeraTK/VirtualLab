@@ -41,6 +41,7 @@ namespace mtca4u { namespace VirtualLab {
 
       StateVariableSet()
       : maxGap(std::numeric_limits<VirtualTime>::max()),
+        hugeGap(std::numeric_limits<VirtualTime>::max()),
         validityPeriod(1),
         historyLength(0),
         currentTime(std::numeric_limits<VirtualTime>::min())
@@ -80,6 +81,18 @@ namespace mtca4u { namespace VirtualLab {
        */
       void setMaximumGap(VirtualTime time) {
         maxGap = time;
+      }
+
+      /** Set - in addition to the maximum gap - an even bigger gap, which will be used to fill larger steps. If a
+       *  state is requested into the far future (more than 2*hugeGap), intermediate steps with a distance of hugeGap
+       *  (instead of maxGap) will be inserted to fill the gap. Only the last hugeGap interval before the requested
+       *  state will be filled with intermediate steps in a distance of maxGap.
+       *
+       *  The hugeGap must be larger than maxGap. If not set, the feature is disabled and only maxGap is used to fill
+       *  large steps.
+       */
+      void setHugeGap(VirtualTime time) {
+        hugeGap = time;
       }
 
       /** Set maximum time difference a getValue() request may go into the past.
@@ -193,9 +206,28 @@ namespace mtca4u { namespace VirtualLab {
         // If request goes into the past (w.r.t. currentTime), erase newer states to force recomputing them.
         truncateFuture(time);
 
+        // Compute the number of steps necessary to reach the requested time, obaying hugeGap. The last step at the
+        // requested time itself is not computed here, since maxGap shall be obeyed in the last gap (see below).
+        // Note: this is effectively rounding-up the integer division (time-CurrentTime)/hugeGap
+        unsigned int nHugeSteps = (time-currentTime-1)/hugeGap + 1;
+
+        // Loop over the time in nHugeSteps steps. The first step is potentially smaller, all consequtive steps are
+        // maxGap big. Omit the last step, so the requested time is not yet reached.
+        for(unsigned int i=0; i<nHugeSteps-1; i++) {
+          VirtualTime t = time-(nHugeSteps-1)*hugeGap + i*hugeGap;
+
+          // obtain the new state
+          STATE state = compute(t);
+
+          // save value into buffer and update the current time
+          buffer[t] = state;
+          currentTime = t;
+
+        }
+
         // Compute the number of steps necessary to reach the requested time, obaying maxGap.
         // Note: this is effectively rounding-up the integer division (time-CurrentTime)/maxGap
-        unsigned int nSteps = (time-currentTime-1)/maxGap+1;
+        unsigned int nSteps = (time-currentTime-1)/maxGap + 1;
 
         // Loop over the time in nSteps steps. The first step is potentially smaller, all consequtive steps are
         // maxGap big.
@@ -224,8 +256,8 @@ namespace mtca4u { namespace VirtualLab {
       /// buffer of values (in dependence of time)
       std::map<VirtualTime,STATE> buffer;
 
-      /// maximum gap
-      VirtualTime maxGap;
+      /// maximum gap and huge gap
+      VirtualTime maxGap, hugeGap;
 
       /// validity period
       VirtualTime validityPeriod;

@@ -30,6 +30,11 @@ namespace mtca4u { namespace VirtualLab {
   }
 
   /*******************************************************************************************************************/
+  void SignalSource::setHugeGap(VirtualTime hugeGap) {
+    buffer.setHugeGap(hugeGap);
+  }
+
+  /*******************************************************************************************************************/
   void SignalSource::setMaxHistoryLength(VirtualTime timeDifference) {
     buffer.setMaxHistoryLength(timeDifference);
     if(!onHistoryLengthChanged.empty()) {

@@ -75,6 +75,16 @@ namespace mtca4u { namespace VirtualLab {
        */
       void setMaximumGap(VirtualTime maxGap);
 
+      /** [call from backend/model] Set - in addition to the maximum gap - an even bigger gap, which will be used to
+       *  fill larger steps. If a state is requested into the far future (more than 2*hugeGap), intermediate steps
+       *  with a distance of hugeGap (instead of maxGap) will be inserted to fill the gap. Only the last hugeGap
+       *  interval before the requested state will be filled with intermediate steps in a distance of maxGap.
+       *
+       *  The hugeGap must be larger than maxGap. If not set, the feature is disabled and only maxGap is used to fill
+       *  large steps.
+       */
+      void setHugeGap(VirtualTime hugeGap);
+
       /** [call from backend/model] provide new value for the given time
        */
       inline void feedValue(VirtualTime time, double value) {
