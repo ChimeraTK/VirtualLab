@@ -259,6 +259,7 @@ class VirtualLabTest {
     VirtualLabTest()
     : onHistoryLengthChanged_argument(0),
       onValueNeeded_returnValue(0),
+      onValueNeeded_returnValue_increment(0),
       onValueNeeded_argument(0),
       onCompute_returnValue(0),
       onCompute_returnValue_increment(0),
@@ -310,9 +311,11 @@ class VirtualLabTest {
     /// callback function for value needed
     double onValueNeeded(VirtualTime time) {
       onValueNeeded_argument = time;
+      onValueNeeded_returnValue += onValueNeeded_returnValue_increment;
       return onValueNeeded_returnValue;
     }
     double onValueNeeded_returnValue;
+    double onValueNeeded_returnValue_increment;
     VirtualTime onValueNeeded_argument;
 
     /// callback function to compute states (StateVariableSet)
@@ -753,6 +756,7 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK( sink.getValue(0*milliseconds) == 42 );
   BOOST_CHECK( sink.getValue(10*milliseconds) == 42 );
   BOOST_CHECK( sink.getValue(42*milliseconds) == 42 );
+  BOOST_CHECK( sink.getValue(std::numeric_limits<VirtualTime>::max()) == 42 );
 
   // re-connect with another constant source
   auto constSource = boost::make_shared<ConstantSignalSource>(120);
@@ -760,6 +764,7 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK( sink.getValue(0*milliseconds) == 120 );  // the sink has no history
   BOOST_CHECK( sink.getValue(10*milliseconds) == 120 );
   BOOST_CHECK( sink.getValue(42*milliseconds) == 120 );
+  BOOST_CHECK( sink.getValue(std::numeric_limits<VirtualTime>::max()) == 120 );
 
   // create non-constant source and connect with it
   auto source = boost::make_shared<SignalSource>();
@@ -824,11 +829,28 @@ void VirtualLabTest::testSinkSource() {
   sink.setMaxHistoryLength(42*seconds);
   BOOST_CHECK( onHistoryLengthChanged_argument == 42*seconds );
 
-  // test SignalSource's callback function when needing a new value
+  // test SignalSource's callback function when needing a new value. Do this with a fresh source to test also
+  // getting the first value with the callback function
+  source = boost::make_shared<SignalSource>();
+  sink.connect(source);
   source->setCallback( boost::bind( &VirtualLabTest::onValueNeeded, this, _1 ) );
+
   onValueNeeded_returnValue = 234.567;
-  BOOST_CHECK( sink.getValue(101*days) == 234.567 );
-  BOOST_CHECK( onValueNeeded_argument == 101*days );
+  BOOST_CHECK( sink.getValue(1*seconds) == 234.567 );
+  BOOST_CHECK( onValueNeeded_argument == 1*seconds );
+
+  onValueNeeded_returnValue = 345.678;
+  BOOST_CHECK( sink.getValue(2*seconds) == 345.678 );
+  BOOST_CHECK( onValueNeeded_argument == 2*seconds );
+
+  // test maximum and huge gaps (more detailed tests are done on the underlying StateVariableSet directly)
+  source->setMaximumGap(1*seconds);
+  source->setHugeGap(100*seconds);
+
+  onValueNeeded_returnValue = 0;
+  onValueNeeded_returnValue_increment = 1;
+  BOOST_CHECK( sink.getValue(444*seconds) == 104 );        // 4 huge gap and 100 normal gaps
+  BOOST_CHECK( onValueNeeded_argument == 444*seconds );
 
 }
 
@@ -1092,5 +1114,32 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( onCompute_argument == 930*seconds );
   BOOST_CHECK( simpleState.getAllStates().size() == 6 );
 
+  // test huge gap
+  simpleState.setHugeGap(1000*seconds);
+  simpleState.setMaximumGap(90*seconds);
+  simpleState.setValidityPeriod(10*seconds);
+  simpleState.setMaxHistoryLength(10000*seconds);
+
+  simpleState.feedState(100800*seconds, 0);
+  onCompute_returnValue = 100;
+  onCompute_returnValue_increment = 1;  // increment by 1 in onCompute() *before* returning the returnValue;
+
+  BOOST_CHECK( simpleState.getState(100810*seconds) == 101 );
+  BOOST_CHECK( onCompute_argument == 100810*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 100810*seconds );
+  BOOST_CHECK( simpleState.getAllStates().size() == 2);
+
+  BOOST_CHECK( simpleState.getState(105000*seconds) == 117 );     // 4 huge gaps and 12 normal gaps
+  BOOST_CHECK( onCompute_argument == 105000*seconds );
+  BOOST_CHECK( simpleState.getLatestTime() == 105000*seconds );
+  BOOST_CHECK( simpleState.getAllStates().size() == 18 );
+
+  for(int i=0; i<12; i++) {
+    BOOST_CHECK( simpleState.getState(105000*seconds - i*90*seconds) == 117-i );
+  }
+
+  for(int i=1; i<5; i++) {
+    BOOST_CHECK( simpleState.getState(105000*seconds - i*1000*seconds) == 106-i );
+  }
 
 }
