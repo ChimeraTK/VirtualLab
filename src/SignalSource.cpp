@@ -54,7 +54,6 @@ namespace mtca4u { namespace VirtualLab {
   {
     setCallback(boost::bind(&ConstantSignalSource::constantCallback, this, _1));
     setValidityPeriod(std::numeric_limits<VirtualTime>::max());
-    buffer.setInitialState(theValue);
   }
 
 }} // namespace mtca4u::VirtuaLab
