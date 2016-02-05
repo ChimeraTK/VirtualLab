@@ -347,7 +347,8 @@ class  VirtualLabTestSuite : public test_suite {
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testThrowException, virtualLabTest ) );
       add( BOOST_CLASS_TEST_CASE( &VirtualLabTest::testStateVariableSet, virtualLabTest ) );
 
-    }};
+    }
+};
 
 /**********************************************************************************************************************/
 test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )

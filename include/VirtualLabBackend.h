@@ -279,14 +279,15 @@ namespace mpl = boost::mpl;
 #define CONSTRUCTOR(name,...)                                                                                   \
     /* createInstance() function used by the BackendFactory. Creates only one instance per instance name! */    \
     static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::string instance,                   \
-        std::list<std::string> parameters) {                                                                    \
-      if(parameters.empty() || instance == "") {                                                                \
-        throw mtca4u::DummyBackendException("No map file name or instance ID given in the sdm URI.",            \
+        std::list<std::string> parameters, std::string mapFileName="") {                                        \
+      if(mapFileName == "") mapFileName = parameters.front(); /* compatibility, remove after deviceaccess 0.6 is out */   \
+      if(mapFileName == "" || instance == "") {                                                                 \
+        throw mtca4u::DummyBackendException("No map file name or instance ID given in the map file.",           \
                                     mtca4u::DummyBackendException::INVALID_PARAMETER);                          \
       }                                                                                                         \
       /* search instance map and create new instance, if bot found under the name */                            \
       if(getInstanceMap().find(instance) == getInstanceMap().end()) {                                           \
-        boost::shared_ptr<mtca4u::DeviceBackend> ptr( new name(parameters.front()) );                           \
+        boost::shared_ptr<mtca4u::DeviceBackend> ptr( new name(mapFileName) );                                  \
         getInstanceMap().insert( std::make_pair(instance,ptr) );                                                \
         return ptr;                                                                                             \
       }                                                                                                         \
@@ -294,8 +295,8 @@ namespace mpl = boost::mpl;
       return boost::shared_ptr<mtca4u::DeviceBackend>(getInstanceMap()[instance]);                              \
     }                                                                                                           \
     /* Static and global instance map (plain static members don't work header-only!) */                         \
-    static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {                  \
-      static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> > instanceMap;                       \
+    static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {                \
+      static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> > instanceMap;                     \
       return instanceMap;                                                                                       \
     }                                                                                                           \
     /* Class to register the backend type with the factory. */                                                  \
