@@ -14,7 +14,6 @@
 #include <map>
 
 #include <boost/shared_ptr.hpp>
-#include <boost/weak_ptr.hpp>
 
 #include <boost/fusion/container/set.hpp>
 #include <boost/fusion/algorithm.hpp>
@@ -295,14 +294,15 @@ namespace mpl = boost::mpl;
       return boost::shared_ptr<mtca4u::DeviceBackend>(getInstanceMap()[instance]);                              \
     }                                                                                                           \
     /* Static and global instance map (plain static members don't work header-only!) */                         \
-    static std::map< std::string, boost::weak_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {                  \
-      static std::map< std::string, boost::weak_ptr<mtca4u::DeviceBackend> > instanceMap;                       \
+    static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {                  \
+      static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> > instanceMap;                       \
       return instanceMap;                                                                                       \
     }                                                                                                           \
     /* Class to register the backend type with the factory. */                                                  \
     class BackendRegisterer {                                                                                   \
       public:                                                                                                   \
         BackendRegisterer() : dummy(0) {                                                                        \
+          std::cout << "VirtualLabBackend::BackendRegisterer: registering backend type " << #name << std::endl;	\
           mtca4u::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance);            \
         }                                                                                                       \
         /* dummy variable we can reference to force linking the object code when just using the header */       \
