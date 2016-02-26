@@ -5,19 +5,18 @@
 # @PROJECT_NAME@_LIBRARY_DIRS : path to the library directory
 # @PROJECT_NAME@_VERSION      : the version of this library
  
-# Compute paths
-get_filename_component(@PROJECT_NAME@_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-
 # There only is one include path, search for it
 FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR @PROJECT_NAME@/VirtualLabBackend.h 
-          ${@PROJECT_NAME@_CMAKE_DIR}/include
-          /usr/include/mtca4u)
+          @CMAKE_INSTALL_PREFIX@/include
+          /usr/include/mtca4u
+	  NO_DEFAULT_PATH
+	  )
 
 # There only is one library, search for it
 # The "NO_DEFALUT" prevents the finding the library in /usr/lib first. We want to give the
 # precedence to the project specific one.
 FIND_LIBRARY(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
-  ${@PROJECT_NAME@_CMAKE_DIR}/lib
+  $@CMAKE_INSTALL_PREFIX@/lib
   /usr/lib
   NO_DEFAULT_PATH
   )
