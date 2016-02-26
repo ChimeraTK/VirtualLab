@@ -6,8 +6,8 @@
 # @PROJECT_NAME@_VERSION      : the version of this library
  
 # There only is one include path, search for it
-FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR @PROJECT_NAME@/VirtualLabBackend.h 
-          @CMAKE_INSTALL_PREFIX@/include
+FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR VirtualLab/VirtualLabBackend.h 
+          @CMAKE_INSTALL_PREFIX@/include/mtca4u
           /usr/include/mtca4u
 	  NO_DEFAULT_PATH
 	  )
