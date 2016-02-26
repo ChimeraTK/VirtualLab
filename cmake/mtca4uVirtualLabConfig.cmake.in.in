@@ -16,7 +16,7 @@ FIND_PATH(@PROJECT_NAME@_INCLUDE_DIR @PROJECT_NAME@/VirtualLabBackend.h
 # The "NO_DEFALUT" prevents the finding the library in /usr/lib first. We want to give the
 # precedence to the project specific one.
 FIND_LIBRARY(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
-  $@CMAKE_INSTALL_PREFIX@/lib
+  @CMAKE_INSTALL_PREFIX@/lib
   /usr/lib
   NO_DEFAULT_PATH
   )
