@@ -8,6 +8,17 @@ set(${PROJECT_NAME}_MINOR_VERSION 02)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
+#This library depends on deviceaccess, which is likely to change often.
+#We add a build version to the version number to be able to install
+#the same software version of the library linked against different versions
+#of deviceacces (or other dependencies)
+set(${PROJECT_NAME}_BUILDVERSION $ENV{${PROJECT_NAME}_BUILDVERSION})
+if( ${PROJECT_NAME}_BUILDVERSION )
+  set(${PROJECT_NAME}_SOVERSION "${${PROJECT_NAME}_SOVERSION}${${PROJECT_NAME}_BUILDVERSION}")
+endif( ${PROJECT_NAME}_BUILDVERSION )
+message("${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_SOVERSION}")
+#We need the build name to be part of the libraries full version name
+set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 
 #Moderate version of the compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized ${mtca4u-deviceaccess_CMAKE_CXX_FLAGS} -O3")
@@ -81,7 +92,7 @@ endif(TESTING_IS_ENABLED)
 
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
-set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
+set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
 target_link_libraries(${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES})
 # do not remove runtime path of the library  when installing
 set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
