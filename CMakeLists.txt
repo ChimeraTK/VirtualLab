@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake) 
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 03)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
@@ -29,7 +29,9 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -
 # linker flags
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
 
-FIND_PACKAGE(mtca4u-deviceaccess 00.06 REQUIRED)
+#put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
+set(mtca4u-deviceaccess_MIN_VERSION 00.06)
+FIND_PACKAGE(mtca4u-deviceaccess ${mtca4u-deviceaccess_MIN_VERSION} REQUIRED)
 include_directories(SYSTEM ${mtca4u-deviceaccess_INCLUDE_DIRS})
 
 FIND_PACKAGE(Boost COMPONENTS system REQUIRED)
@@ -109,7 +111,7 @@ if(DOXYGEN_FOUND)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating API documentation with Doxygen" VERBATIM
     )
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION})
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION})
 else(DOXYGEN_FOUND)
   message("Doxygen not found, documentation will not be build.")
 endif(DOXYGEN_FOUND)
@@ -158,4 +160,4 @@ install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
   DESTINATION  share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules COMPONENT dev)
 
 # The instructions to create a debian package are loaded from a separate file
-#include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
