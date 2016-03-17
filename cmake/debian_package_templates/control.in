@@ -9,7 +9,7 @@ Section: libs
 Package: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@-dev
 Section: libdevel
 Architecture: any
-Depends: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@@mtca4uVirtualLab_DEBVERSION@,  libmtca4u-deviceaccess-dev (>= @mtca4u-deviceaccess_VERSION@),  libmtca4u-deviceaccess-dev (<= @mtca4u-deviceaccess_SOVERSION@.99-zz), libboost@Boost_MAJOR_VERSION@.@Boost_MINOR_VERSION@-dev
+Depends: @mtca4uVirtualLab_DEBPACKAGE_BASENAME@@mtca4uVirtualLab_DEBVERSION@,  libmtca4u-deviceaccess-dev (>= @mtca4u-deviceaccess_SOVERSION@),  libmtca4u-deviceaccess-dev (<= @mtca4u-deviceaccess_SOVERSION@.99-zz), libboost@Boost_MAJOR_VERSION@.@Boost_MINOR_VERSION@-dev
 Description: Header and cmake files for MTCA4U VirtualLab.
  The files you need to compile against the virtual lab.
 
