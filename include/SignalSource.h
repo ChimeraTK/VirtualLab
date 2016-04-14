@@ -11,6 +11,7 @@
 #include <map>
 #include <limits>
 #include <sstream>
+#include <iostream>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <mtca4u/Exception.h>
