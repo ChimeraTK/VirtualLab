@@ -20,15 +20,6 @@ message("${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_SOVERSION}")
 #We need the build name to be part of the libraries full version name
 set(${PROJECT_NAME}_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_SOVERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 
-#Moderate version of the compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized ${mtca4u-deviceaccess_CMAKE_CXX_FLAGS} -O3")
-
-#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
-
-# linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
-
 #put the min version of deviceaccess into a variable. We need it for the debian packaging scripts
 set(mtca4u-deviceaccess_MIN_VERSION 00.06)
 FIND_PACKAGE(mtca4u-deviceaccess ${mtca4u-deviceaccess_MIN_VERSION} REQUIRED)
@@ -49,6 +40,15 @@ ENDIF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/)
 aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
+
+#Moderate version of the compiler flags
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized ${mtca4u-deviceaccess_CXX_FLAGS} -O3")
+
+#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
+
+# linker flags
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic")
 
 MACRO( COPY_MAPPING_FILES )
   foreach( FILE_TO_COPY test.mapp dummies.dmap )
@@ -133,31 +133,18 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS} DESTINATION include/mtca4u/Vir
 	  PATTERN "${PROJECT_NAME}" EXCLUDE
 	  )
 
-#create the config files by filling the correct variables into the template (*.cmake.in)
+
+
+#Create the config files by filling the correct variables into the template (*.cmake.in).
 #All variables @VARIABLE@ are replaced with the current values, but they have to be set first....
-set(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS})
-set(${PROJECT_NAME}_REFERENCE_HEADER "physDummyDevice.h")
-set(${PROJECT_NAME}_CONFIG_LIBRARIES ${${PROJECT_NAME}_LIBRARIES})
-set(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
-#create the config files by filling the correct variables into the template (*.cmake.in)
-#All variables @VARIABLE@ are replaced with the current values
-
-#We have nested @-statements, so we have to parse twice
-configure_file(cmake/${PROJECT_NAME}Config.cmake.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
-
-configure_file(cmake/${PROJECT_NAME}ConfigVersion.cmake.in.in
-  "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
- 
-# Install the ..Config.cmake and ..ConfigVersion.cmake
-install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
-  "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" 
-  "${CMAKE_SOURCE_DIR}/cmake/Find${PROJECT_NAME}.cmake"
-  DESTINATION  share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules COMPONENT dev)
+#Only the reference header is needed. The other variables are for dependencies of this library,
+#but there are none.
+set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${mtca4u-deviceaccess_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}")
+set(${PROJECT_NAME}_LIBRARIES "${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${Boost_LIBRARIES}")
+set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${mtca4u-deviceaccess_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS}")
+set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags")
+include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
 # The instructions to create a debian package are loaded from a separate file
 include(${CMAKE_SOURCE_DIR}/cmake/prepare_debian_package.cmake)
