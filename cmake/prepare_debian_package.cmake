@@ -1,7 +1,13 @@
 #Prepare the debian control files from the template.
 #Basically this is setting the correct version number in most of the files
 
-set(${PROJECT_NAME}_DEBPACKAGE_BASENAME libmtca4u-virtuallab)
+set(${PROJECT_NAME}_DEBPACKAGE_BASENAME "libmtca4u-virtuallab")
+set(PACKAGE_BUILDVERSION_ENVIRONMENT_VARIABLE_NAME "mtca4uVirtualLab_BUILDVERSION")
+set(PACKAGE_FULL_LIBRARY_VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION})
+set(PACKAGE_GIT_URI "https://github.com/ChimeraTK/VirtualLab.git")
+set(PACKAGE_TAG_VERSION ${${PROJECT_NAME}_VERSION})
+set(PACKAGE_MESSAGE ${CODENAME} "Debian package for MTCA4U VirtualLab ${${PROJECT_NAME}_VERSION}")
+set(PACKAGE_BASE_NAME "${${PROJECT_NAME}_DEBPACKAGE_BASENAME}")
 
 #The debian version string must not contain ".", so we use "-"
 string(REPLACE "." "-" ${PROJECT_NAME}_DEBVERSION ${${PROJECT_NAME}_SOVERSION})
