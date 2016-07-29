@@ -26,7 +26,8 @@ message("mtca4u-deviceaccess_SOVERSION ${mtca4u-deviceaccess_SOVERSION}")
 
 #Nothing to change, just copy
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/compat
-           ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/rules
+          ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/copyright
+          ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/rules
      DESTINATION debian_from_template)
 
 file(COPY ${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/source/format
@@ -39,9 +40,6 @@ configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/DEBPACKAGE_BAS
 #Adapt the file name and/or set the version number
 configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/control.in
                debian_from_template/control @ONLY)
-
-configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/copyright.in
-               debian_from_template/copyright @ONLY)
 
 configure_file(${CMAKE_SOURCE_DIR}/cmake/debian_package_templates/DEBPACKAGE_BASENAME_DEBVERSION.shlib.in
                debian_from_template/${${PROJECT_NAME}_DEBPACKAGE_BASENAME}${${PROJECT_NAME}_DEBVERSION}.shlib)
