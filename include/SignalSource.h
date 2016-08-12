@@ -86,6 +86,26 @@ namespace mtca4u { namespace VirtualLab {
        */
       void setHugeGap(VirtualTime hugeGap);
 
+      /** Enable interpolation. No states will be fully computed by the model closer together than the maximum gap
+       *  time. Instead requests for these times will be interpolated. Note that this usually will lead to requests
+       *  to other model components being generated into the "future" (from the current request), since values are
+       *  needed on both sides for an interpolation (in contrast to an extrapolation, which might be invalid). */
+      void setEnableInterpolation(bool enable) {
+        buffer.setEnableInterpolation(enable);
+      }
+
+      /** Set the function which interpolates between two states. The passed function has must accept the following
+       *  arguments (in order):
+       *  - the first support state to base the interpolation on
+       *  - the second support state
+       *  - the time of the first support state
+       *  - the time of the second support state
+       *  - the requested time to return the interpolated state for */
+      void setInterpolateFunction(
+          const boost::function<double(const double&, const double&, VirtualTime, VirtualTime, VirtualTime)> &callback) {
+        buffer.setInterpolateFunction(callback);
+      }
+
       /** [call from backend/model] provide new value for the given time
        */
       inline void feedValue(VirtualTime time, double value) {

@@ -22,7 +22,7 @@ namespace mtca4u { namespace VirtualLab {
   /// Exception class
   class StateVariableSetException : public Exception {
     public:
-      enum {REQUEST_FAR_PAST};
+      enum {REQUEST_FAR_PAST, ILLEGAL_PARAMETER};
       StateVariableSetException(const std::string &message, unsigned int exceptionID)
       : Exception( message, exceptionID ){}
   };
@@ -40,12 +40,13 @@ namespace mtca4u { namespace VirtualLab {
     public:
 
       StateVariableSet()
-      : maxGap(std::numeric_limits<VirtualTime>::max()),
-        hugeGap(std::numeric_limits<VirtualTime>::max()),
+      : maxGap(std::numeric_limits<VirtualTime>::max()/2),
+        hugeGap(std::numeric_limits<VirtualTime>::max()/2),
         validityPeriod(1),
         historyLength(0),
         currentTime(std::numeric_limits<VirtualTime>::min())
       {
+        interpolate = boost::bind(&StateVariableSet::defaultInterpolate, this, _1,_2,_3,_4,_5);
       }
 
       /** Set the initial state for time 0.
@@ -95,6 +96,26 @@ namespace mtca4u { namespace VirtualLab {
         hugeGap = time;
       }
 
+      /** Enable interpolation. No states will be fully computed by the model closer together than the maximum gap
+       *  time. Instead requests for these times will be interpolated. Note that this usually will lead to requests
+       *  to other model components being generated into the "future" (from the current request), since values are
+       *  needed on both sides for an interpolation (in contrast to an extrapolation, which might be invalid). */
+      void setEnableInterpolation(bool enable) {
+        enableInterpolation = enable;
+      }
+
+      /** Set the function which interpolates between two states. The passed function has must accept the following
+       *  arguments (in order):
+       *  - the first support state to base the interpolation on
+       *  - the second support state
+       *  - the time of the first support state
+       *  - the time of the second support state
+       *  - the requested time to return the interpolated state for */
+      void setInterpolateFunction(
+          const boost::function<STATE(const STATE&, const STATE&, VirtualTime, VirtualTime, VirtualTime)> &callback) {
+        interpolate = callback;
+      }
+
       /** Set maximum time difference a getValue() request may go into the past.
        *
        *  If the history length is not set, no history is kept and only the latest state is retained. The history
@@ -114,13 +135,18 @@ namespace mtca4u { namespace VirtualLab {
         validityPeriod = period;
       }
 
-      /// Obtain the state for the given time. time must be >= 0.
-      inline const STATE& getState(VirtualTime time) {
+      /** Obtain the state for the given time. time must be >= 0.
+       *  The optional second argument forceNoInterpolation allows to disable a potentially enabled interpolation and
+       *  thus force a full recomputation of the state. This is mainly used inside the interpolation code to make sure
+       *  there are no recursion problems, but it could be helpful in other contexts as well. */
+      inline const STATE& getState(VirtualTime time, bool forceNoInterpolation=false) {
         // check if time is the current time and return the latest element
-        if(time >= currentTime && time < currentTime + validityPeriod) return getLatestState();
+        if(time >= currentTime && time < currentTime + validityPeriod) {
+          return getLatestState();
+        }
         // search in buffer: find the first element after the requested time
         auto it = buffer.upper_bound(time);
-        if(it == buffer.begin())  {
+        if(it == buffer.begin()) {
           std::stringstream s;
           s << "Value request is too far into the past: ";
           s << "requested time = " << time << ", oldest history = " << buffer.begin()->first;
@@ -128,11 +154,25 @@ namespace mtca4u { namespace VirtualLab {
           throw StateVariableSetException(s.str(),StateVariableSetException::REQUEST_FAR_PAST);
         }
         // if this is end(), a new value needs to be computed
-        if(it == buffer.end()) return getValueFromCallback(time);
+        if(it == buffer.end()) {
+          if(!forceNoInterpolation) {
+            return getValueInterpolated(time, buffer.rbegin()->first);
+          }
+          else {
+            return getValueFromCallback(time);
+          }
+        }
         // decrement to get the most recent sample before the requested time
         --it;
         // if sample is too old, request one via callback
-        if(time >= it->first + validityPeriod) return getValueFromCallback(time);
+        if(time >= it->first + validityPeriod) {
+          if(!forceNoInterpolation) {
+            return getValueInterpolated(time, it->first);
+          }
+          else {
+            return getValueFromCallback(time);
+          }
+        }
         // return value from buffer
         return it->second;
       }
@@ -198,6 +238,21 @@ namespace mtca4u { namespace VirtualLab {
           auto firstToKeep = buffer.upper_bound(currentTime - historyLength - 1);
           buffer.erase(buffer.begin(), firstToKeep);
         }
+      }
+
+      /// obtain a new state via interpolation, if enabled, or via callback otherwise
+      inline const STATE& getValueInterpolated(VirtualTime timeRequested, VirtualTime previousStep) {
+
+        // no interpolation or requested time is later than the interpolation period (maxGap)
+        if(!enableInterpolation || timeRequested >= previousStep + maxGap) {
+          return getValueFromCallback(timeRequested);
+        }
+
+        // save interpolated state into the buffer and return it
+        auto state1 = getState(previousStep, true);
+        auto state2 = getState(previousStep + maxGap, true);
+        buffer[timeRequested] = interpolate(state1, state2, previousStep, previousStep+maxGap, timeRequested);
+        return buffer[timeRequested];
       }
 
       /// obtain a new state via the callback function and place it into the buffer. Helper for getValue()
@@ -267,6 +322,20 @@ namespace mtca4u { namespace VirtualLab {
 
       /// time of last fed sample
       VirtualTime currentTime;
+
+      /// enable or disable interpolation
+      bool enableInterpolation{false};
+
+      /// function called to interpolate between two states
+      boost::function<STATE(const STATE&, const STATE&, VirtualTime, VirtualTime, VirtualTime)> interpolate;
+
+      /// default interpolate function to throw an exception
+      STATE defaultInterpolate(const STATE&, const STATE&, VirtualTime, VirtualTime, VirtualTime) {
+        std::cout << "Interpolation enabled but no interpolate function set." << std::endl;
+        throw StateVariableSetException("Interpolation enabled but no interpolate function set.",
+            StateVariableSetException::ILLEGAL_PARAMETER);
+      }
+
 
   };
 
