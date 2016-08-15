@@ -5,7 +5,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
 set(${PROJECT_NAME}_MINOR_VERSION 03)
-set(${PROJECT_NAME}_PATCH_VERSION 03)
+set(${PROJECT_NAME}_PATCH_VERSION 04)
 set(${PROJECT_NAME}_VERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION}.${${PROJECT_NAME}_PATCH_VERSION})
 set(${PROJECT_NAME}_SOVERSION ${${PROJECT_NAME}_MAJOR_VERSION}.${${PROJECT_NAME}_MINOR_VERSION})
 #This library depends on deviceaccess, which is likely to change often.
@@ -40,6 +40,13 @@ ENDIF(Boost_UNIT_TEST_FRAMEWORK_FOUND)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/)
 aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
+
+# Set the build type to Release if none is specified
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
+      FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
 
 #Moderate version of the compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized ${mtca4u-deviceaccess_CXX_FLAGS} -O3")
