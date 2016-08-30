@@ -44,7 +44,8 @@ namespace mtca4u { namespace VirtualLab {
         hugeGap(std::numeric_limits<VirtualTime>::max()/2),
         validityPeriod(1),
         historyLength(0),
-        currentTime(std::numeric_limits<VirtualTime>::min())
+        currentTime(std::numeric_limits<VirtualTime>::min()),
+        enableInterpolation(false)
       {
         interpolate = boost::bind(&StateVariableSet::defaultInterpolate, this, _1,_2,_3,_4,_5);
       }
@@ -324,7 +325,7 @@ namespace mtca4u { namespace VirtualLab {
       VirtualTime currentTime;
 
       /// enable or disable interpolation
-      bool enableInterpolation{false};
+      bool enableInterpolation;
 
       /// function called to interpolate between two states
       boost::function<STATE(const STATE&, const STATE&, VirtualTime, VirtualTime, VirtualTime)> interpolate;
