@@ -91,6 +91,10 @@ namespace mtca4u { namespace VirtualLab {
        *  to other model components being generated into the "future" (from the current request), since values are
        *  needed on both sides for an interpolation (in contrast to an extrapolation, which might be invalid). */
       void setEnableInterpolation(bool enable) {
+#ifndef ENABLE_EXPERIMENTAL_FEATURES
+        class ExperimentalFeatureNotEnabled{};
+        throw ExperimentalFeatureNotEnabled();
+#endif
         buffer.setEnableInterpolation(enable);
       }
 

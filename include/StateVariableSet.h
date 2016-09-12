@@ -47,7 +47,9 @@ namespace mtca4u { namespace VirtualLab {
         currentTime(std::numeric_limits<VirtualTime>::min()),
         enableInterpolation(false)
       {
+#ifdef ENABLE_EXPERIMENTAL_FEATURES
         interpolate = boost::bind(&StateVariableSet::defaultInterpolate, this, _1,_2,_3,_4,_5);
+#endif
       }
 
       /** Set the initial state for time 0.
@@ -97,11 +99,16 @@ namespace mtca4u { namespace VirtualLab {
         hugeGap = time;
       }
 
-      /** Enable interpolation. No states will be fully computed by the model closer together than the maximum gap
+      /** Experimental feature: enable by defining ENABLE_EXPERIMENTAL_FEATURES
+       *  Enable interpolation. No states will be fully computed by the model closer together than the maximum gap
        *  time. Instead requests for these times will be interpolated. Note that this usually will lead to requests
        *  to other model components being generated into the "future" (from the current request), since values are
        *  needed on both sides for an interpolation (in contrast to an extrapolation, which might be invalid). */
       void setEnableInterpolation(bool enable) {
+#ifndef ENABLE_EXPERIMENTAL_FEATURES
+        class ExperimentalFeatureNotEnabled{};
+        throw ExperimentalFeatureNotEnabled();
+#endif
         enableInterpolation = enable;
       }
 
@@ -112,8 +119,11 @@ namespace mtca4u { namespace VirtualLab {
        *  - the time of the first support state
        *  - the time of the second support state
        *  - the requested time to return the interpolated state for */
-      void setInterpolateFunction(
-          const boost::function<STATE(const STATE&, const STATE&, VirtualTime, VirtualTime, VirtualTime)> &callback) {
+      void setInterpolateFunction(const boost::function<STATE(const STATE&, const STATE&, VirtualTime, VirtualTime, VirtualTime)> &callback) {
+#ifndef ENABLE_EXPERIMENTAL_FEATURES
+        class ExperimentalFeatureNotEnabled{};
+        throw ExperimentalFeatureNotEnabled();
+#endif
         interpolate = callback;
       }
 
@@ -141,6 +151,9 @@ namespace mtca4u { namespace VirtualLab {
        *  thus force a full recomputation of the state. This is mainly used inside the interpolation code to make sure
        *  there are no recursion problems, but it could be helpful in other contexts as well. */
       inline const STATE& getState(VirtualTime time, bool forceNoInterpolation=false) {
+#ifndef ENABLE_EXPERIMENTAL_FEATURES
+        (void)forceNoInterpolation; // avoid warning
+#endif
         // check if time is the current time and return the latest element
         if(time >= currentTime && time < currentTime + validityPeriod) {
           return getLatestState();
@@ -156,23 +169,31 @@ namespace mtca4u { namespace VirtualLab {
         }
         // if this is end(), a new value needs to be computed
         if(it == buffer.end()) {
+#ifdef ENABLE_EXPERIMENTAL_FEATURES
           if(!forceNoInterpolation) {
             return getValueInterpolated(time, buffer.rbegin()->first);
           }
           else {
+#endif
             return getValueFromCallback(time);
+#ifdef ENABLE_EXPERIMENTAL_FEATURES
           }
+#endif
         }
         // decrement to get the most recent sample before the requested time
         --it;
         // if sample is too old, request one via callback
         if(time >= it->first + validityPeriod) {
+#ifdef ENABLE_EXPERIMENTAL_FEATURES
           if(!forceNoInterpolation) {
             return getValueInterpolated(time, it->first);
           }
           else {
+#endif
             return getValueFromCallback(time);
+#ifdef ENABLE_EXPERIMENTAL_FEATURES
           }
+#endif
         }
         // return value from buffer
         return it->second;
@@ -243,7 +264,10 @@ namespace mtca4u { namespace VirtualLab {
 
       /// obtain a new state via interpolation, if enabled, or via callback otherwise
       inline const STATE& getValueInterpolated(VirtualTime timeRequested, VirtualTime previousStep) {
-
+#ifndef ENABLE_EXPERIMENTAL_FEATURES
+        class ExperimentalFeatureNotEnabled{};
+        throw ExperimentalFeatureNotEnabled();
+#endif
         // no interpolation or requested time is later than the interpolation period (maxGap)
         if(!enableInterpolation || timeRequested >= previousStep + maxGap) {
           return getValueFromCallback(timeRequested);
@@ -332,11 +356,14 @@ namespace mtca4u { namespace VirtualLab {
 
       /// default interpolate function to throw an exception
       STATE defaultInterpolate(const STATE&, const STATE&, VirtualTime, VirtualTime, VirtualTime) {
+#ifndef ENABLE_EXPERIMENTAL_FEATURES
+        class ExperimentalFeatureNotEnabled{};
+        throw ExperimentalFeatureNotEnabled();
+#endif
         std::cout << "Interpolation enabled but no interpolate function set." << std::endl;
         throw StateVariableSetException("Interpolation enabled but no interpolate function set.",
             StateVariableSetException::ILLEGAL_PARAMETER);
       }
-
 
   };
 
