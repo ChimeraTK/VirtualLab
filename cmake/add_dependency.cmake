@@ -26,12 +26,22 @@
 #
 #######################################################################################################################
 
-MACRO(add_dependency dependency_project_name required_version components)
-
+FUNCTION(add_dependency dependency_project_name required_version)
+  # collect additional arguments and put into the list of components
+  SET(components "")
+  foreach(arg IN LISTS ARGN)
+    SET(components ${components} ${arg})
+  endforeach()
   FIND_PACKAGE(${dependency_project_name} ${required_version} COMPONENTS ${components})
-  include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS})
+  include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS} ${${dependency_project_name}_INCLUDE_DIR})
   link_directories(${${dependency_project_name}_LIBRARY_DIRS})
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}")
+  link_directories(${${dependency_project_name}_LIBRARY_DIR})
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${${dependency_project_name}_CXX_FLAGS}" PARENT_SCOPE)
+  SET(${dependency_project_name}_LIBRARIES ${${dependency_project_name}_LIBRARIES} PARENT_SCOPE)
+  SET(${dependency_project_name}_LINKER_FLAGS "${${dependency_project_name}_LINKER_FLAGS} ${${dependency_project_name}_LINK_FLAGS}" PARENT_SCOPE)
+  SET(${dependency_project_name}_LINK_FLAGS "${${dependency_project_name}_LINKER_FLAGS} ${${dependency_project_name}_LINK_FLAGS}" PARENT_SCOPE)
+  SET(${dependency_project_name}_CXX_FLAGS ${${dependency_project_name}_CXX_FLAGS} PARENT_SCOPE)
+  SET(${dependency_project_name}_FOUND ${${dependency_project_name}_FOUND} PARENT_SCOPE)
 
-ENDMACRO(add_dependency)
+ENDFUNCTION(add_dependency)
 
