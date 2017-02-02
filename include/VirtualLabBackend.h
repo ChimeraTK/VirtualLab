@@ -26,6 +26,7 @@
 #include <mtca4u/DummyBackend.h>
 #include <mtca4u/DummyRegisterAccessor.h>
 #include <mtca4u/BackendFactory.h>
+#include <mtca4u/DeviceAccessVersion.h>
 
 #include "TimerGroup.h"
 
@@ -304,7 +305,7 @@ namespace mpl = boost::mpl;
       public:                                                                                                   \
         BackendRegisterer() : dummy(0) {                                                                        \
           std::cout << "VirtualLabBackend::BackendRegisterer: registering backend type " << #name << std::endl;	\
-          mtca4u::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance);            \
+          mtca4u::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance, CHIMERATK_DEVICEACCESS_VERSION); \
         }                                                                                                       \
         /* dummy variable we can reference to force linking the object code when just using the header */       \
         int dummy;                                                                                              \

@@ -4,12 +4,12 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 04)
-set(${PROJECT_NAME}_PATCH_VERSION 01)
+set(${PROJECT_NAME}_MINOR_VERSION 05)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(${CMAKE_SOURCE_DIR}/cmake/set_version_numbers.cmake)
 
 include(${CMAKE_SOURCE_DIR}/cmake/add_dependency.cmake)
-add_dependency(mtca4u-deviceaccess 00.12 REQUIRED)
+add_dependency(mtca4u-deviceaccess 00.19 REQUIRED)
 
 FIND_PACKAGE(Boost COMPONENTS system unit_test_framework REQUIRED)
 
