@@ -12,6 +12,7 @@
 #include <limits>
 #include <string>
 #include <map>
+#include <mutex>
 
 #include <boost/shared_ptr.hpp>
 
@@ -384,7 +385,8 @@ class VirtualLabBackend : public DummyBackend
     virtual ~VirtualLabBackend() {}
 
     /// override writeArea to fire the events
-    virtual void write(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) {
+    void write(uint8_t bar, uint32_t address, int32_t const *data, size_t sizeInBytes) override {
+      std::lock_guard<std::mutex> guard(deviceLock);
 
       // save as last written data, for use inside guards of the events we may trigger now
       lastWrittenData = data;
@@ -398,7 +400,8 @@ class VirtualLabBackend : public DummyBackend
     }
 
     /// override readArea to fire the events
-    virtual void read(uint8_t bar, uint32_t address, int32_t *data, size_t sizeInBytes) {
+    void read(uint8_t bar, uint32_t address, int32_t *data, size_t sizeInBytes) override {
+      std::lock_guard<std::mutex> guard(deviceLock);
 
       // trigger events
       regReadEvents(bar, address, sizeInBytes);
@@ -485,6 +488,9 @@ class VirtualLabBackend : public DummyBackend
     /// last written data (into any register) and its size. Will be used in guard conditions.
     int32_t const *lastWrittenData;
     size_t lastWrittenSize;
+    
+    /// mutex to prevent concurrent access to the device from different threads
+    std::mutex deviceLock;
 
 };
 
