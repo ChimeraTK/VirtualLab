@@ -17,7 +17,7 @@
 
 #include "VirtualTime.h"
 
-namespace mtca4u { namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
   /** A set of state variables contains a struct of time-dependent variables. In this class a mechanism is provided
     * which helps keeping track of these variables properly and computing values as needed.
@@ -358,7 +358,14 @@ namespace mtca4u { namespace VirtualLab {
 
   };
 
-}}  // namespace mtca4u::VirtualLab
+}}  // namespace ChimeraTK::VirtualLab
 
+// Compatibility
+namespace mtca4u { namespace VirtualLab {
+  template<class STATE>
+  class StateVariableSet : public ChimeraTK::VirtualLab::StateVariableSet<STATE> {
+    using ChimeraTK::VirtualLab::StateVariableSet<STATE>::StateVariableSet;
+  };
+}}
 
 #endif /* STATEVARIABLESET_H */

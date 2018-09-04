@@ -24,10 +24,10 @@
 #include <boost/msm/front/state_machine_def.hpp>
 #include <boost/msm/front/euml/euml.hpp>
 
-#include <mtca4u/DummyBackend.h>
-#include <mtca4u/DummyRegisterAccessor.h>
-#include <mtca4u/BackendFactory.h>
-#include <mtca4u/DeviceAccessVersion.h>
+#include <ChimeraTK/DummyBackend.h>
+#include <ChimeraTK/DummyRegisterAccessor.h>
+#include <ChimeraTK/BackendFactory.h>
+#include <ChimeraTK/DeviceAccessVersion.h>
 
 #include "TimerGroup.h"
 
@@ -68,7 +68,7 @@ namespace mpl = boost::mpl;
  * FixedPointConverter.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_REGISTER(UserType, name) mtca4u::DummyRegisterAccessor<UserType> name
+#define DECLARE_REGISTER(UserType, name) ChimeraTK::DummyRegisterAccessor<UserType> name
 
 /** \def DECLARE_MUXED_REGISTER(UserType, name)
  * Declare a dummy register accessor for multiplexed 2D-array registers.
@@ -76,7 +76,7 @@ namespace mpl = boost::mpl;
  * FixedPointConverter.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_MUXED_REGISTER(UserType, name) mtca4u::DummyMultiplexedRegisterAccessor<UserType> name
+#define DECLARE_MUXED_REGISTER(UserType, name) ChimeraTK::DummyMultiplexedRegisterAccessor<UserType> name
 
 /** \def WRITEEVENT_TABLE
  * Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events.
@@ -280,7 +280,7 @@ namespace mpl = boost::mpl;
  * (test coverage hint: these two macros are used in the test) */
 #define CONSTRUCTOR(name,...)                                                                                   \
     /* createInstance() function used by the BackendFactory. Creates only one instance per instance name! */    \
-    static boost::shared_ptr<DeviceBackend> createInstance(std::string, std::string instance,                   \
+    static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string, std::string instance,                   \
         std::list<std::string> parameters, std::string mapFileName="") {                                        \
       if(mapFileName == "") mapFileName = parameters.front(); /* compatibility, remove after deviceaccess 0.6 is out */   \
       if(mapFileName == "" || instance == "") {                                                                 \
@@ -288,16 +288,16 @@ namespace mpl = boost::mpl;
       }                                                                                                         \
       /* search instance map and create new instance, if bot found under the name */                            \
       if(getInstanceMap().find(instance) == getInstanceMap().end()) {                                           \
-        boost::shared_ptr<mtca4u::DeviceBackend> ptr( new name(mapFileName) );                                  \
+        boost::shared_ptr<ChimeraTK::DeviceBackend> ptr( new name(mapFileName) );                                  \
         getInstanceMap().insert( std::make_pair(instance,ptr) );                                                \
         return ptr;                                                                                             \
       }                                                                                                         \
       /* return existing instance from the map */                                                               \
-      return boost::shared_ptr<mtca4u::DeviceBackend>(getInstanceMap()[instance]);                              \
+      return boost::shared_ptr<ChimeraTK::DeviceBackend>(getInstanceMap()[instance]);                              \
     }                                                                                                           \
     /* Static and global instance map (plain static members don't work header-only!) */                         \
-    static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> >& getInstanceMap() {                \
-      static std::map< std::string, boost::shared_ptr<mtca4u::DeviceBackend> > instanceMap;                     \
+    static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> >& getInstanceMap() {                \
+      static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> > instanceMap;                     \
       return instanceMap;                                                                                       \
     }                                                                                                           \
     /* Class to register the backend type with the factory. */                                                  \
@@ -305,7 +305,7 @@ namespace mpl = boost::mpl;
       public:                                                                                                   \
         BackendRegisterer() : dummy(0) {                                                                        \
           std::cout << "VirtualLabBackend::BackendRegisterer: registering backend type " << #name << std::endl;	\
-          mtca4u::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance, CHIMERATK_DEVICEACCESS_VERSION); \
+          ChimeraTK::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance, CHIMERATK_DEVICEACCESS_VERSION); \
         }                                                                                                       \
         /* dummy variable we can reference to force linking the object code when just using the header */       \
         int dummy;                                                                                              \
@@ -336,7 +336,7 @@ namespace mpl = boost::mpl;
     name::BackendRegisterer name::backendRegisterer
 
 
-namespace mtca4u { namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
 /*********************************************************************************************************************/
 /** Base class for VirtualLab dummy devices.
@@ -367,13 +367,13 @@ namespace mtca4u { namespace VirtualLab {
  *  \ref DECLARE_TIMER_GROUP containing one timer.
  */
 template<class derived>
-class VirtualLabBackend : public DummyBackend
+class VirtualLabBackend : public ChimeraTK::DummyBackend
 {
   public:
 
     // constructor via standard device model decription (as used by the DeviceFactory)
     VirtualLabBackend(std::string mapFileName) :
-      DummyBackend(mapFileName),
+      ChimeraTK::DummyBackend(mapFileName),
       lastWrittenData(NULL),
       lastWrittenSize(0)
     {
@@ -494,6 +494,14 @@ class VirtualLabBackend : public DummyBackend
 };
 
 
-}}// namespace mtca4u::VirtualLab
+}}// namespace ChimeraTK::VirtualLab
+
+// Compatibility
+namespace mtca4u { namespace VirtualLab {
+  template<class derived>
+  class VirtualLabBackend : public ChimeraTK::VirtualLab::VirtualLabBackend<derived> {
+    using ChimeraTK::VirtualLab::VirtualLabBackend<derived>::VirtualLabBackend;
+  };
+}}
 
 #endif /* VIRTUALDEVICE_H */

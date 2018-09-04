@@ -7,7 +7,7 @@
 
 #include "SignalSource.h"
 
-namespace mtca4u { namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
   /*******************************************************************************************************************/
   SignalSource::SignalSource()
@@ -56,6 +56,6 @@ namespace mtca4u { namespace VirtualLab {
     setValidityPeriod(std::numeric_limits<VirtualTime>::max());
   }
 
-}} // namespace mtca4u::VirtuaLab
+}} // namespace ChimeraTK::VirtuaLab
 
 

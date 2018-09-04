@@ -11,7 +11,7 @@
 #include <boost/make_shared.hpp>
 #include "SignalSource.h"
 
-namespace mtca4u { namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
   /// A SignalSink requensts time-dependent signal values from a SignalSource. Objects of this class will normally be
   /// members of a VirtualLabBackend or a model component.
@@ -44,6 +44,14 @@ namespace mtca4u { namespace VirtualLab {
 
   };
 
-}}  // namespace mtca4u::VirtualLab
+}}  // namespace ChimeraTK::VirtualLab
+
+// Compatibility
+namespace mtca4u { namespace VirtualLab {
+  class SignalSink : public ChimeraTK::VirtualLab::SignalSink {
+    using ChimeraTK::VirtualLab::SignalSink::SignalSink;
+  };
+}}
+
 
 #endif /* SIGNALSINK_H */

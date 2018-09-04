@@ -20,7 +20,7 @@
 #include "StateVariableSet.h"
 
 
-namespace mtca4u { namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
   /**
    *  A SignalSource provides time-dependent signal values to a SignalSink. Objects of this class will normally be
@@ -176,9 +176,14 @@ namespace mtca4u { namespace VirtualLab {
 
   };
 
-}}  // namespace mtca4u::VirtualLab
+}}  // namespace ChimeraTK::VirtualLab
 
 
-
+// Compatibility
+namespace mtca4u { namespace VirtualLab {
+  class SignalSource : public ChimeraTK::VirtualLab::SignalSource {
+    using ChimeraTK::VirtualLab::SignalSource::SignalSource;
+  };
+}}
 
 #endif /* SIGNALSOURCE_H */

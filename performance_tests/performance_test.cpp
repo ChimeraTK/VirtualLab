@@ -11,7 +11,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/timer.hpp>
 
-using namespace mtca4u::VirtualLab;
+using namespace ChimeraTK::VirtualLab;
 
 /**********************************************************************************************************************/
 /** The VirtualTestDevice is a VirtualDevice implementation to test the framework

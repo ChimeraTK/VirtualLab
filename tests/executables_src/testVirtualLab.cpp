@@ -10,21 +10,21 @@
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
-#include <mtca4u/Device.h>
+#include <ChimeraTK/Device.h>
 #include "VirtualLabBackend.h"
 #include "SignalSink.h"
 #include "StateVariableSet.h"
 
 using namespace boost::unit_test_framework;
 
-using namespace mtca4u;
-using namespace mtca4u::VirtualLab;
+using namespace ChimeraTK;
+using namespace ChimeraTK::VirtualLab;
 
 #define TEST_MAPPING_FILE "test.mapp"
 #define TEST_DMAP_FILE "dummies.dmap"
 
 // instantiate template class to get a correct coverage report
-template class mtca4u::VirtualLab::StateVariableSet<int>;
+template class ChimeraTK::VirtualLab::StateVariableSet<int>;
 
 /**********************************************************************************************************************/
 // forward declaration so we can declare it friend of VirtualTestDevice

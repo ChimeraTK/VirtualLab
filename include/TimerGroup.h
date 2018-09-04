@@ -14,7 +14,7 @@
 
 #include "VirtualTime.h"
 
-namespace mtca4u { namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
 ///
 /// Helper macro: DO NOT DIRECTLY USE
@@ -220,7 +220,14 @@ class TimerGroup {
 };
 
 
-}} // namespace mtca4u::VirtualLab
+}} // namespace ChimeraTK::VirtualLab
 
+// Compatibility
+namespace mtca4u { namespace VirtualLab {
+  template<class timerTypes>
+  class TimerGroup : public ChimeraTK::VirtualLab::TimerGroup<timerTypes> {
+    using ChimeraTK::VirtualLab::TimerGroup<timerTypes>::TimerGroup;
+  };
+}}
 
 #endif /* TIMERGROUP_H */

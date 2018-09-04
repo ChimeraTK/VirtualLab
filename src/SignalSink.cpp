@@ -7,7 +7,7 @@
 
 #include "SignalSink.h"
 
-namespace mtca4u { namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
   /*******************************************************************************************************************/
   SignalSink::SignalSink(double defaultValue)
@@ -29,4 +29,4 @@ namespace mtca4u { namespace VirtualLab {
     signalSource->setMaxHistoryLength(historyLength);
   }
 
-}} // namespace mtca4u::VirtuaLab
+}} // namespace ChimeraTK::VirtuaLab
