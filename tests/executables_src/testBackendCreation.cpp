@@ -22,11 +22,11 @@ public:
   DECLARE_STATE(Done);
   DECLARE_EVENT(Nothing);
   DECLARE_MAIN_STATE_MACHINE( Done(),
-			      ( Done() + Nothing() ));
+                              ( Done() + Nothing() ));
 
 };
 /// Register the backend type with the factory.
-REGISTER_BACKEND_TYPE(SimplestVLBackend)
+REGISTER_BACKEND_TYPE(SimplestVLBackend);
 
 BOOST_AUTO_TEST_SUITE( BackendCreationTestSuite )
 
@@ -47,14 +47,14 @@ BOOST_AUTO_TEST_CASE( testBackendCreation ){
   // now get the second dmap entry of the same instance
   boost::shared_ptr<mtca4u::DeviceBackend> simple0B = factory.createBackend("SIMPLE0B");
   BOOST_CHECK( simple0B.get() == backendRawPointer );
-  
+
   // get 0A again, just to be sure...
   boost::shared_ptr<mtca4u::DeviceBackend> simple0A = factory.createBackend("SIMPLE0A");
   BOOST_CHECK( simple0B == simple0A );
 
   // now check that the instantiation really works, simple 1 must be different
   boost::shared_ptr<mtca4u::DeviceBackend> simple1 = factory.createBackend("SIMPLE1");
-  BOOST_CHECK( simple1 != simple0A );  
+  BOOST_CHECK( simple1 != simple0A );
 
 }
 

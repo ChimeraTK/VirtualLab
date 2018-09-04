@@ -32,10 +32,10 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     virtual ~VirtualTestDevice() {}
 
     /// states
-    DECLARE_STATE(DevIdle)
+    DECLARE_STATE(DevIdle);
 
     /// events
-    DECLARE_EVENT(onTimer)
+    DECLARE_EVENT(onTimer);
 
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(fillingAction)
@@ -49,8 +49,8 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_MUXED_REGISTER(int, someMuxedRegister);
 
     /// timer group
-    DECLARE_TIMER(myTimer, onTimer)
-    DECLARE_TIMER_GROUP(timers, myTimer)
+    DECLARE_TIMER(myTimer, onTimer);
+    DECLARE_TIMER_GROUP(timers, myTimer);
 
     /// pointer inside the buffer
     int currentOffset;
@@ -64,13 +64,13 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
       // handle filling of register by timer
       DevIdle() + onTimer() / fillingAction()
-    ))
+    ));
 
     /// allow access to _barContent
     friend int main();
 };
 
-REGISTER_BACKEND_TYPE(VirtualTestDevice)
+REGISTER_BACKEND_TYPE(VirtualTestDevice);
 
 int main() {
 

@@ -40,14 +40,14 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: this macro is used in the test) */
 #define DECLARE_EVENT(name)                                                                                     \
-  class name : public msm::front::euml::euml_event< name > {};
+  class name : public msm::front::euml::euml_event< name > {}
 
 /** \def DECLARE_STATE(name)
  * Declare a plain state, without any entry or exit functions etc.
  *
  * (test coverage hint: this macro is used in the test) */
 #define DECLARE_STATE(name)                                                                                     \
-  class name : public msm::front::state<> , public msm::front::euml::euml_state<name> {};
+  class name : public msm::front::state<> , public msm::front::euml::euml_state<name> {}
 
 /** \def DECLARE_LOGGING_STATE(name)
  * Declare a logging state. Entry and exit of this state will be looged to std::cout.
@@ -60,7 +60,7 @@ namespace mpl = boost::mpl;
       void on_entry(Event const&,FSM&) { std::cout << "Entering state: " << #name << std::endl; }               \
       template <class Event,class FSM>                                                                          \
       void on_exit(Event const&,FSM&) { std::cout << "Leaving state: " << #name << std::endl; }                 \
-  };
+  }
 
 /** \def DECLARE_REGISTER(UserType, name)
  * Declare a dummy register accessor for single-word or 1D-array registers.
@@ -68,7 +68,7 @@ namespace mpl = boost::mpl;
  * FixedPointConverter.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_REGISTER(UserType, name) mtca4u::DummyRegisterAccessor<UserType> name;
+#define DECLARE_REGISTER(UserType, name) mtca4u::DummyRegisterAccessor<UserType> name
 
 /** \def DECLARE_MUXED_REGISTER(UserType, name)
  * Declare a dummy register accessor for multiplexed 2D-array registers.
@@ -76,7 +76,7 @@ namespace mpl = boost::mpl;
  * FixedPointConverter.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_MUXED_REGISTER(UserType, name) mtca4u::DummyMultiplexedRegisterAccessor<UserType> name;
+#define DECLARE_MUXED_REGISTER(UserType, name) mtca4u::DummyMultiplexedRegisterAccessor<UserType> name
 
 /** \def WRITEEVENT_TABLE
  * Provide a "table" of events and register names using the CONNECT_REGISTER_EVENT macro for write events.
@@ -186,7 +186,7 @@ namespace mpl = boost::mpl;
  * Declare a timer with a given name. Will fire the given event.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_TIMER(name,event) Timer<event> name;
+#define DECLARE_TIMER(name,event) Timer<event> name
 
 /** \def DECLARE_TIMER_GROUP(name, ...)
  * Declare a timer group with a given name. The additional arguments must be the timers part of
@@ -207,7 +207,7 @@ namespace mpl = boost::mpl;
       protected:                                                                                                \
         dummyDeviceType *dev;                                                                                   \
     };                                                                                                          \
-    name ## _ name;
+    name ## _ name
 
 /** \def DECLARE_STATE_MACHINE(stateMachineName, initialState, transitionTable)
  * Declare a state machine (usually a sub-state machine, also see DECLARE_MAIN_STATE_MACHINE)
@@ -233,7 +233,7 @@ namespace mpl = boost::mpl;
         void setDummyDevice(dummyDeviceType *_dev) {dev = _dev;}                                                \
         dummyDeviceType *dev;                                                                                   \
     };                                                                                                          \
-    typedef msm::back::state_machine<stateMachineName ## _> stateMachineName;
+    typedef msm::back::state_machine<stateMachineName ## _> stateMachineName
 
 /** \def DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)
  * Declare the main state machine. This is just like DECLARE_STATE_MACHINE but with a fixed name "mainStateMachine".
@@ -257,7 +257,7 @@ namespace mpl = boost::mpl;
         dummyDeviceType *dev;                                                                                   \
     };                                                                                                          \
     typedef msm::back::state_machine<mainStateMachine_> mainStateMachine;                                       \
-    mainStateMachine theStateMachine;
+    mainStateMachine theStateMachine
 
 /** \def CONSTRUCTOR(name,...)
  * Declare the constructor of the VirtualLabBackend. The first argument must be the class name. The other arguments
@@ -325,7 +325,7 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: this macro is used in the test) */
 #define INIT_SUB_STATE_MACHINE(name)                                                                            \
-    theStateMachine.get_state< name * >()->setDummyDevice(this);
+    theStateMachine.get_state< name * >()->setDummyDevice(this)
 
 /** \def REGISTER_BACKEND_TYPE(name)
  * Register backend type with the BackendFactory. Must be placed into the C++ source file for any VirtualLabBackend
@@ -333,7 +333,7 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: this macro is used in the test) */
 #define REGISTER_BACKEND_TYPE(name)                                                                             \
-    name::BackendRegisterer name::backendRegisterer;
+    name::BackendRegisterer name::backendRegisterer
 
 
 namespace mtca4u { namespace VirtualLab {

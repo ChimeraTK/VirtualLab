@@ -55,7 +55,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       someFlag(false),
       subCounter(0)
     )
-      INIT_SUB_STATE_MACHINE(subMachine)
+      INIT_SUB_STATE_MACHINE(subMachine);
     END_CONSTRUCTOR
 
     // Overload open and close to send events on device open and close. For a real VirtualLabBackend, this should
@@ -77,26 +77,26 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     }
 
     /// states
-    DECLARE_STATE(DevClosed)
-    DECLARE_STATE(DevOpen)
-    DECLARE_LOGGING_STATE(SomeIntermediateState)
-    DECLARE_LOGGING_STATE(CountingState)
-    DECLARE_LOGGING_STATE(TimerTest)
+    DECLARE_STATE(DevClosed);
+    DECLARE_STATE(DevOpen);
+    DECLARE_LOGGING_STATE(SomeIntermediateState);
+    DECLARE_LOGGING_STATE(CountingState);
+    DECLARE_LOGGING_STATE(TimerTest);
 
     /// events
-    DECLARE_EVENT(onDeviceOpen)
-    DECLARE_EVENT(onDeviceClose)
-    DECLARE_EVENT(onTimer)
-    DECLARE_EVENT(onSecondTimer)
-    DECLARE_EVENT(goCounting)
-    DECLARE_EVENT(onRead)
-    DECLARE_EVENT(onWrite)
-    DECLARE_EVENT(onWriteMuxed)
-    DECLARE_EVENT(startSubMachine)
-    DECLARE_EVENT(stopSubMachine)
-    DECLARE_EVENT(runDoubleAction)
-    DECLARE_EVENT(setBothTimers)
-    DECLARE_EVENT(goTimerTest)
+    DECLARE_EVENT(onDeviceOpen);
+    DECLARE_EVENT(onDeviceClose);
+    DECLARE_EVENT(onTimer);
+    DECLARE_EVENT(onSecondTimer);
+    DECLARE_EVENT(goCounting);
+    DECLARE_EVENT(onRead);
+    DECLARE_EVENT(onWrite);
+    DECLARE_EVENT(onWriteMuxed);
+    DECLARE_EVENT(startSubMachine);
+    DECLARE_EVENT(stopSubMachine);
+    DECLARE_EVENT(runDoubleAction);
+    DECLARE_EVENT(setBothTimers);
+    DECLARE_EVENT(goTimerTest);
 
     /// counting action: increase counter and set timer again
     DECLARE_ACTION(countingAction)
@@ -141,11 +141,11 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 
     /// connect read and write events
     READEVENT_TABLE
-      CONNECT_REGISTER_EVENT(onRead,someRegister)
+      CONNECT_REGISTER_EVENT(onRead,someRegister);
     END_READEVENT_TABLE
     WRITEEVENT_TABLE
-      CONNECT_REGISTER_EVENT(onWrite,someRegister)
-      CONNECT_REGISTER_EVENT(onWriteMuxed,someMuxedRegister)
+      CONNECT_REGISTER_EVENT(onWrite,someRegister);
+      CONNECT_REGISTER_EVENT(onWriteMuxed,someMuxedRegister);
     END_WRITEEVENT_TABLE
 
     /// register accessors
@@ -153,9 +153,9 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     DECLARE_MUXED_REGISTER(int, someMuxedRegister);
 
     /// timer group
-    DECLARE_TIMER(myTimer, onTimer)
-    DECLARE_TIMER(mySecondTimer, onSecondTimer)
-    DECLARE_TIMER_GROUP(timers__, myTimer, mySecondTimer)
+    DECLARE_TIMER(myTimer, onTimer);
+    DECLARE_TIMER(mySecondTimer, onSecondTimer);
+    DECLARE_TIMER_GROUP(timers__, myTimer, mySecondTimer);
 
     /// derived timer group class to make the test class a friend
     class timers_ : public timers___ {
@@ -178,7 +178,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     END_DECLARE_ACTION
 
     /// register guard: allow transition if 42 is written
-    DECLARE_REGISTER_GUARD(is42Written, value == 42 )
+    DECLARE_REGISTER_GUARD(is42Written, value == 42 );
 
     /// guard testing if a flag is set or not
     bool someFlag;
@@ -187,19 +187,19 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
     END_DECLARE_GUARD
 
     /// define a small sub-state machine
-    DECLARE_STATE(subInit)
-    DECLARE_EVENT(subEvent)
+    DECLARE_STATE(subInit);
+    DECLARE_EVENT(subEvent);
     DECLARE_ACTION(subCount)
       subCounter++;
     END_DECLARE_ACTION
     int subCounter;
     DECLARE_STATE_MACHINE(subMachine, subInit(), (
       subInit() + subEvent() / subCount()
-    ))
+    ));
 
     /// action throwing an exception
-    DECLARE_EVENT(requestException)
-    DECLARE_STATE(awaitException)
+    DECLARE_EVENT(requestException);
+    DECLARE_STATE(awaitException);
     DECLARE_ACTION(throwException)
       throw std::string("This is some exception destroying our state machine!");
     END_DECLARE_ACTION
@@ -247,11 +247,11 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
       // exception throwing inside a timer
       DevOpen() + requestException() == awaitException(),
       awaitException() + onTimer() / throwException()
-    ))
+    ));
 
 };
 
-REGISTER_BACKEND_TYPE(VirtualTestDevice)
+REGISTER_BACKEND_TYPE(VirtualTestDevice);
 
 /**********************************************************************************************************************/
 class VirtualLabTest {
