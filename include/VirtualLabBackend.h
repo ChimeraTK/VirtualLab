@@ -284,8 +284,7 @@ namespace mpl = boost::mpl;
         std::list<std::string> parameters, std::string mapFileName="") {                                        \
       if(mapFileName == "") mapFileName = parameters.front(); /* compatibility, remove after deviceaccess 0.6 is out */   \
       if(mapFileName == "" || instance == "") {                                                                 \
-        throw mtca4u::DummyBackendException("No map file name or instance ID given in the map file.",           \
-                                    mtca4u::DummyBackendException::INVALID_PARAMETER);                          \
+        throw ChimeraTK::logic_error("No map file name or instance ID given in the map file.");                  \
       }                                                                                                         \
       /* search instance map and create new instance, if bot found under the name */                            \
       if(getInstanceMap().find(instance) == getInstanceMap().end()) {                                           \
@@ -488,7 +487,7 @@ class VirtualLabBackend : public DummyBackend
     /// last written data (into any register) and its size. Will be used in guard conditions.
     int32_t const *lastWrittenData;
     size_t lastWrittenSize;
-    
+
     /// mutex to prevent concurrent access to the device from different threads
     std::mutex deviceLock;
 

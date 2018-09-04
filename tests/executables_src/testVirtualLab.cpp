@@ -807,14 +807,14 @@ void VirtualLabTest::testSinkSource() {
   source->feedValue(20*milliseconds, 123.);
   BOOST_CHECK( sink.getValue(0*milliseconds) == 10. );
   source->feedValue(20*milliseconds + 1, 124.);
-  BOOST_CHECK_THROW( sink.getValue(0*milliseconds), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(0*milliseconds), ChimeraTK::logic_error );
 
   // change history length and check it
   sink.setMaxHistoryLength(5*milliseconds);
   source->feedValue(25*milliseconds, 125.);
   BOOST_CHECK( sink.getValue(20*milliseconds) == 123. );
   source->feedValue(25*milliseconds + 1, 126.);
-  BOOST_CHECK_THROW( sink.getValue(20*milliseconds), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(20*milliseconds), ChimeraTK::logic_error );
 
   // go to large times and check if it is still working
   source->feedValue(100*days, 127.);
@@ -822,7 +822,7 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK( sink.getValue(100*days) == 127. );
   BOOST_CHECK( sink.getValue(100*days + 5*milliseconds) == 128. );
   source->feedValue(100*days + 5*milliseconds + 1, 129.);
-  BOOST_CHECK_THROW( sink.getValue(100*days), SignalSourceException );
+  BOOST_CHECK_THROW( sink.getValue(100*days), ChimeraTK::logic_error );
 
   // test SignalSource's callback function "onHistoryLengthChanged"
   source->setOnHistoryLengthChanged( boost::bind( &VirtualLabTest::onHistoryLengthChanged, this, _1 ) );
@@ -905,7 +905,7 @@ void VirtualLabTest::testStateVariableSet() {
   StateVariableSet<int> simpleState;
 
   // check for exception if no initial state was set
-  BOOST_CHECK_THROW( simpleState.getState(0), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(0), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getAllStates().size() == 0 );
 
   // set initial state and get it back
@@ -954,8 +954,8 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getLatestTime() == 3*seconds );
 
   // go into past without history length set
-  BOOST_CHECK_THROW( simpleState.getState(0), StateVariableSetException );
-  BOOST_CHECK_THROW( simpleState.getState(3*seconds-1), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(0), ChimeraTK::logic_error );
+  BOOST_CHECK_THROW( simpleState.getState(3*seconds-1), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getLatestTime() == 3*seconds );
   BOOST_CHECK( simpleState.getAllStates().size() == 1 );
 
@@ -981,7 +981,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getState(13*seconds+1) == 999 );
   BOOST_CHECK( onCompute_argument == 13*seconds+1 );
   BOOST_CHECK( simpleState.getLatestTime() == 13*seconds+1 );
-  BOOST_CHECK_THROW( simpleState.getState(3*seconds), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(3*seconds), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getAllStates().size() == 3 );
 
   // test history length shorter than validity period (a rather pointless configuration...)
@@ -992,7 +992,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getState(100*seconds) == 100 );
   BOOST_CHECK( onCompute_argument == 100*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 100*seconds );
-  BOOST_CHECK_THROW( simpleState.getState(13*seconds+1), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(13*seconds+1), ChimeraTK::logic_error );
 
   onCompute_returnValue = 101;
   BOOST_CHECK( simpleState.getState(100*seconds + 1*milliseconds - 1) == 100 );
@@ -1008,7 +1008,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getState(101*seconds) == 101 );
   BOOST_CHECK( onCompute_argument == 101*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 101*seconds );
-  BOOST_CHECK_THROW( simpleState.getState(100*seconds), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(100*seconds), ChimeraTK::logic_error );
 
   // set maximum gap and test it
   simpleState.setMaximumGap(100*seconds);
@@ -1061,14 +1061,14 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getState(350*seconds) == 18 );
   BOOST_CHECK( onCompute_argument == 350*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 350*seconds );
-  BOOST_CHECK_THROW( simpleState.getState(311*seconds), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(311*seconds), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getAllStates().size() == 1 );
 
   BOOST_CHECK( simpleState.getState(800*seconds) == 23 );
   BOOST_CHECK( onCompute_argument == 800*seconds );
   BOOST_CHECK( simpleState.getLatestTime() == 800*seconds );
-  BOOST_CHECK_THROW( simpleState.getState(700*seconds), StateVariableSetException );
-  BOOST_CHECK_THROW( simpleState.getState(800*seconds-1), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(700*seconds), ChimeraTK::logic_error );
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds-1), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getAllStates().size() == 1 );
 
   // test feedState()
@@ -1082,7 +1082,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getAllStates().size() == 2 );
 
   simpleState.feedState(901*seconds, 2345);                     // old state should be removed
-  BOOST_CHECK_THROW( simpleState.getState(800*seconds), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
   BOOST_CHECK( simpleState.getState(901*seconds) == 2345 );
   BOOST_CHECK( simpleState.getAllStates().size() == 2 );
@@ -1094,7 +1094,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getAllStates().size() == 3 );
 
   simpleState.feedState(930*seconds, 4567);                     // 4th state with a too big gap (no check performed here)
-  BOOST_CHECK_THROW( simpleState.getState(800*seconds), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
   BOOST_CHECK( simpleState.getState(901*seconds) == 2345 );
   BOOST_CHECK( simpleState.getState(910*seconds) == 3456 );
@@ -1102,7 +1102,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK( simpleState.getAllStates().size() == 4 );
 
   simpleState.feedState(905*seconds, 666);                      // add intermediate step, removing future steps
-  BOOST_CHECK_THROW( simpleState.getState(800*seconds), StateVariableSetException );
+  BOOST_CHECK_THROW( simpleState.getState(800*seconds), ChimeraTK::logic_error );
   BOOST_CHECK( simpleState.getState(900*seconds-1) == 1234 );
   BOOST_CHECK( simpleState.getState(901*seconds) == 2345 );
   BOOST_CHECK( simpleState.getState(905*seconds) == 666 );

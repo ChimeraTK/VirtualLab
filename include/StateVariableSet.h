@@ -19,14 +19,6 @@
 
 namespace mtca4u { namespace VirtualLab {
 
-  /// Exception class
-  class StateVariableSetException : public Exception {
-    public:
-      enum {REQUEST_FAR_PAST, ILLEGAL_PARAMETER};
-      StateVariableSetException(const std::string &message, unsigned int exceptionID)
-      : Exception( message, exceptionID ){}
-  };
-
   /** A set of state variables contains a struct of time-dependent variables. In this class a mechanism is provided
     * which helps keeping track of these variables properly and computing values as needed.
     *
@@ -165,7 +157,7 @@ namespace mtca4u { namespace VirtualLab {
           s << "Value request is too far into the past: ";
           s << "requested time = " << time << ", oldest history = " << buffer.begin()->first;
           s << ", current time = " << currentTime;
-          throw StateVariableSetException(s.str(),StateVariableSetException::REQUEST_FAR_PAST);
+          throw ChimeraTK::logic_error(s.str());
         }
         // if this is end(), a new value needs to be computed
         if(it == buffer.end()) {
@@ -361,8 +353,7 @@ namespace mtca4u { namespace VirtualLab {
         throw ExperimentalFeatureNotEnabled();
 #endif
         std::cout << "Interpolation enabled but no interpolate function set." << std::endl;
-        throw StateVariableSetException("Interpolation enabled but no interpolate function set.",
-            StateVariableSetException::ILLEGAL_PARAMETER);
+        throw ChimeraTK::logic_error("Interpolation enabled but no interpolate function set.");
       }
 
   };

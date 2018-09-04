@@ -23,16 +23,6 @@
 namespace mtca4u { namespace VirtualLab {
 
   /**
-   *  Exception class
-   */
-  class SignalSourceException : public Exception {
-    public:
-      enum {REQUEST_FAR_PAST};
-      SignalSourceException(const std::string &message, unsigned int exceptionID)
-      : Exception( message, exceptionID ){}
-  };
-
-  /**
    *  A SignalSource provides time-dependent signal values to a SignalSink. Objects of this class will normally be
    *  members of a VirtualLabBackend or a model component.
    */
@@ -126,12 +116,7 @@ namespace mtca4u { namespace VirtualLab {
         }
 
         // get value from buffer
-        try {
-          return buffer.getState(time);
-        }
-        catch(StateVariableSetException &e) {
-          throw SignalSourceException(e.what(), SignalSourceException::REQUEST_FAR_PAST);
-        }
+        return buffer.getState(time);
       }
 
       /** Obtain the latest computed value.
