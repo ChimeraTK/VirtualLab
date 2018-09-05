@@ -353,7 +353,7 @@ class  VirtualLabTestSuite : public test_suite {
 /**********************************************************************************************************************/
 test_suite* init_unit_test_suite( int /*argc*/, char* /*argv*/ [] )
 {
-  mtca4u::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE);
+  ChimeraTK::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE);
 
   framework::master_test_suite().p_name.value = "VirtualLab test suite";
   framework::master_test_suite().add(new VirtualLabTestSuite);

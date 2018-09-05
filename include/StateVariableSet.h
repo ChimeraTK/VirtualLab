@@ -13,7 +13,7 @@
 #include <sstream>
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
-#include <mtca4u/Exception.h>
+#include <ChimeraTK/Exception.h>
 
 #include "VirtualTime.h"
 
