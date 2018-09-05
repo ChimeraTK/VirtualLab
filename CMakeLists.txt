@@ -103,10 +103,15 @@ install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin
 #The exclusion of ${PROJECT_NAME} prevents the recursive installation of the files just being installed.
 #The original headers are in include/*.h, the installed ones in include/PROJECT_NAME/*.h.
 install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS}
-        DESTINATION include/mtca4u/VirtualLab
+        DESTINATION include/ChimeraTK/VirtualLab
         FILES_MATCHING PATTERN "*.h" PATTERN ".svn" EXCLUDE
                                      PATTERN "${PROJECT_NAME}" EXCLUDE )
 
+# Compatibility...
+install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS}
+       DESTINATION include/mtca4u/VirtualLab
+       FILES_MATCHING PATTERN "*.h" PATTERN ".svn" EXCLUDE
+                                    PATTERN "${PROJECT_NAME}" EXCLUDE )
 #Create the config files by filling the correct variables into the template (*.cmake.in).
 #All variables @VARIABLE@ are replaced with the current values, but they have to be set first....
 #Only the reference header is needed. The other variables are for dependencies of this library,
