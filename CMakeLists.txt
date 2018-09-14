@@ -4,12 +4,12 @@ cmake_minimum_required(VERSION 2.8)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 06)
+set(${PROJECT_NAME}_MINOR_VERSION 07)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(${CMAKE_SOURCE_DIR}/cmake/set_version_numbers.cmake)
 
 include(${CMAKE_SOURCE_DIR}/cmake/add_dependency.cmake)
-add_dependency(mtca4u-deviceaccess 00.24 REQUIRED)
+add_dependency(ChimeraTK-DeviceAccess 01.00 REQUIRED)
 
 FIND_PACKAGE(Boost COMPONENTS system unit_test_framework REQUIRED)
 
@@ -32,8 +32,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -O3 -Wall -Wextra -Wuninitialized"
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
 
 # linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${mtca4u-deviceaccess_LINKER_FLAGS} -Wl,--export-dynamic")
-set(CMAKE_EXE_LINKER_FLAGS "${mtca4u-deviceaccess_LINKER_FLAGS}")
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ChimeraTK-DeviceAccess_LINKER_FLAGS} -Wl,--export-dynamic")
+set(CMAKE_EXE_LINKER_FLAGS "${ChimeraTK-DeviceAccess_LINKER_FLAGS}")
 
 #Create the executables for automated unit testing.
 #Currently we assume that they are all tests contained in one file, so
@@ -45,7 +45,7 @@ foreach( testExecutableSrcFile ${testExecutables})
   #NAME_WE means the base name without path and (longest) extension
   get_filename_component(excutableName ${testExecutableSrcFile} NAME_WE)
   add_executable(${excutableName} ${testExecutableSrcFile})
-  target_link_libraries(${excutableName} ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${PYTHON_LIBRARIES})
+  target_link_libraries(${excutableName} ${PROJECT_NAME} ${ChimeraTK-DeviceAccess_LIBRARIES} ${PYTHON_LIBRARIES})
   add_test(${excutableName} ${excutableName})
 endforeach( testExecutableSrcFile )
 
@@ -54,7 +54,7 @@ foreach( perftestExecutableSrcFile ${perftestExecutables})
   #NAME_WE means the base name without path and (longest) extension
   get_filename_component(excutableName ${perftestExecutableSrcFile} NAME_WE)
   add_executable(${excutableName} ${perftestExecutableSrcFile})
-  target_link_libraries(${excutableName} ${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES} ${PYTHON_LIBRARIES})
+  target_link_libraries(${excutableName} ${PROJECT_NAME} ${ChimeraTK-DeviceAccess_LIBRARIES} ${PYTHON_LIBRARIES})
 endforeach( perftestExecutableSrcFile )
 
 # copy the map files needed for the tests
@@ -75,7 +75,7 @@ ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION} SOVERSION ${${PROJECT_NAME}_SOVERSION})
-target_link_libraries(${PROJECT_NAME} ${mtca4u-deviceaccess_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${ChimeraTK-DeviceAccess_LIBRARIES})
 # do not remove runtime path of the library  when installing
 set_property(TARGET ${PROJECT_NAME} PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
 
@@ -116,10 +116,10 @@ install(DIRECTORY ${${PROJECT_NAME}_INCLUDE_DIRS}
 #All variables @VARIABLE@ are replaced with the current values, but they have to be set first....
 #Only the reference header is needed. The other variables are for dependencies of this library,
 #but there are none.
-set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${mtca4u-deviceaccess_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}")
-set(${PROJECT_NAME}_LIBRARIES "${mtca4u-deviceaccess_LIBRARIES}")
-set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${mtca4u-deviceaccess_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS}")
-set(${PROJECT_NAME}_CXX_FLAGS "${mtca4u-deviceaccess_CXX_FLAGS}")
-set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags ${mtca4u-deviceaccess_LINKER_FLAGS}")
+set(${PROJECT_NAME}_INCLUDE_DIRS "${CMAKE_INSTALL_PREFIX}/include ${ChimeraTK-DeviceAccess_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS}")
+set(${PROJECT_NAME}_LIBRARIES "${ChimeraTK-DeviceAccess_LIBRARIES}")
+set(${PROJECT_NAME}_LIBRARY_DIRS "${CMAKE_INSTALL_PREFIX}/lib ${ChimeraTK-DeviceAccess_LIBRARY_DIRS} ${Boost_LIBRARY_DIRS}")
+set(${PROJECT_NAME}_CXX_FLAGS "${ChimeraTK-DeviceAccess_CXX_FLAGS}")
+set(${PROJECT_NAME}_LINKER_FLAGS "-Wl,-rpath=${CMAKE_INSTALL_PREFIX}/lib,--enable-new-dtags ${ChimeraTK-DeviceAccess_LINKER_FLAGS}")
 include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
 
