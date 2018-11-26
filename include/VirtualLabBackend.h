@@ -202,7 +202,7 @@ namespace mpl = boost::mpl;
           dev(_dev)                                                                                             \
         {                                                                                                       \
           DECLARE_TIMER_GROUP_MAKEMAP(__VA_ARGS__)                                                              \
-          timers = new name ## __( DECLARE_TIMER_GROUP_INIT_VECTOR(__VA_ARGS__) );                              \
+          timers = std::make_unique<name ## __>( DECLARE_TIMER_GROUP_INIT_VECTOR(__VA_ARGS__) );                              \
         }                                                                                                       \
       protected:                                                                                                \
         dummyDeviceType *dev;                                                                                   \

@@ -8,6 +8,8 @@
 #ifndef TIMERGROUP_H
 #define TIMERGROUP_H
 
+#include <memory>
+
 #include <boost/fusion/container.hpp>
 #include <boost/fusion/sequence.hpp>
 #include <boost/fusion/algorithm.hpp>
@@ -105,7 +107,7 @@ namespace ChimeraTK { namespace VirtualLab {
 template<class timerTypes>
 class TimerGroup {
   public:
-    TimerGroup() : findRemainingByName_index(0),timers(NULL),current(0) {}
+    TimerGroup() : findRemainingByName_index(0),current(0) {}
     ~TimerGroup() {}
 
     /// Get remaining time until the next timer fires, or -1 if no timer has been set.
@@ -209,7 +211,7 @@ class TimerGroup {
     };
 
     /// fusion::vector of timer instances
-    timerTypes *timers;
+    std::unique_ptr<timerTypes> timers;
 
     /// std::vector of timer names
     std::vector<std::string> names;
