@@ -11,6 +11,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 
 #include <ChimeraTK/Device.h>
+#include <ChimeraTK/parserUtilities.h>
 #include "VirtualLabBackend.h"
 #include "SignalSink.h"
 #include "StateVariableSet.h"
@@ -252,6 +253,15 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice>
 };
 
 REGISTER_BACKEND_TYPE(VirtualTestDevice);
+/**********************************************************************************************************************/
+
+std::string convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
+  std::string dmapDir = ChimeraTK::parserUtilities::extractDirectory( BackendFactory::getInstance().getDMapFilePath());
+  std::string absPathToDmapDir = ChimeraTK::parserUtilities::convertToAbsolutePath(dmapDir);
+  // the map file is relative to the dmap file location. Convert the relative
+  // mapfilename to an absolute path
+  return ChimeraTK::parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
+}
 
 /**********************************************************************************************************************/
 class VirtualLabTest {
@@ -265,9 +275,9 @@ class VirtualLabTest {
       onCompute_returnValue_increment(0),
       onCompute_argument(0)
     {
-      std::list<std::string> params;
-      params.push_back(TEST_MAPPING_FILE);
-      device = boost::static_pointer_cast<VirtualTestDevice>( VirtualTestDevice::createInstance("", "0", params) );
+      std::map<std::string,std::string> params;
+      params["map"] = convertPathRelativeToDmapToAbs(TEST_MAPPING_FILE);
+      device = boost::static_pointer_cast<VirtualTestDevice>( VirtualTestDevice::createInstance("0", params) );
     }
 
     /// test the device open and close events
@@ -874,9 +884,9 @@ void VirtualLabTest::testThrowException() {
   };
 
   // need to create our own device for this test, as it destroys the state machine
-  std::list<std::string> params;
-  params.push_back(TEST_MAPPING_FILE);
-  auto myDevice = boost::static_pointer_cast<VirtualTestDevice>( VirtualTestDevice::createInstance("", "1", params) );
+  std::map<std::string,std::string> params;
+  params["map"] = TEST_MAPPING_FILE;
+  auto myDevice = boost::static_pointer_cast<VirtualTestDevice>( VirtualTestDevice::createInstance("", params) );
   myDevice->open();
 
   // go into awaitException state and set the timer (which will trigger the exception action)

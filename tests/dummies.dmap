@@ -1,4 +1,4 @@
-DUMMY sdm://./VirtualTestDevice:0=test.mapp test.mapp
+DUMMY (VirtualTestDevice:0?map=test.mapp)
 # Simple backend for the creation test
 SIMPLE0A sdm://./SimplestVLBackend:0=test.mapp test.mapp
 # A second dmap entry for the same backend instance

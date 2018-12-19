@@ -280,24 +280,16 @@ namespace mpl = boost::mpl;
  * (test coverage hint: these two macros are used in the test) */
 #define CONSTRUCTOR(name,...)                                                                                   \
     /* createInstance() function used by the BackendFactory. Creates only one instance per instance name! */    \
-    static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string, std::string instance,                   \
-        std::list<std::string> parameters, std::string mapFileName="") {                                        \
-      if(mapFileName == "") mapFileName = parameters.front(); /* compatibility, remove after deviceaccess 0.6 is out */   \
-      if(mapFileName == "" || instance == "") {                                                                 \
-        throw ChimeraTK::logic_error("No map file name or instance ID given in the map file.");                  \
+    static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(std::string address,                      \
+                         std::map<std::string,std::string> parameters) {                                        \
+      if(parameters["map"].empty()) {                                                                           \
+        throw ChimeraTK::logic_error("No map file name given in the device descriptor.");                       \
       }                                                                                                         \
-      /* search instance map and create new instance, if bot found under the name */                            \
-      if(getInstanceMap().find(instance) == getInstanceMap().end()) {                                           \
-        boost::shared_ptr<ChimeraTK::DeviceBackend> ptr( new name(mapFileName) );                                  \
-        getInstanceMap().insert( std::make_pair(instance,ptr) );                                                \
-        return ptr;                                                                                             \
-      }                                                                                                         \
-      /* return existing instance from the map */                                                               \
-      return boost::shared_ptr<ChimeraTK::DeviceBackend>(getInstanceMap()[instance]);                              \
+      return returnInstance<name>(address, convertPathRelativeToDmapToAbs(parameters["map"]));                  \
     }                                                                                                           \
     /* Static and global instance map (plain static members don't work header-only!) */                         \
-    static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> >& getInstanceMap() {                \
-      static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> > instanceMap;                     \
+    static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> >& getInstanceMap() {             \
+      static std::map< std::string, boost::shared_ptr<ChimeraTK::DeviceBackend> > instanceMap;                  \
       return instanceMap;                                                                                       \
     }                                                                                                           \
     /* Class to register the backend type with the factory. */                                                  \
@@ -305,7 +297,7 @@ namespace mpl = boost::mpl;
       public:                                                                                                   \
         BackendRegisterer() : dummy(0) {                                                                        \
           std::cout << "VirtualLabBackend::BackendRegisterer: registering backend type " << #name << std::endl;	\
-          ChimeraTK::BackendFactory::getInstance().registerBackendType(#name,"",&name::createInstance, CHIMERATK_DEVICEACCESS_VERSION); \
+          ChimeraTK::BackendFactory::getInstance().registerBackendType(#name, &name::createInstance);           \
         }                                                                                                       \
         /* dummy variable we can reference to force linking the object code when just using the header */       \
         int dummy;                                                                                              \
