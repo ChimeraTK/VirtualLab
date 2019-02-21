@@ -7,26 +7,26 @@
 
 #include "SignalSink.h"
 
-namespace ChimeraTK { namespace VirtualLab {
+namespace ChimeraTK {
+namespace VirtualLab {
 
-  /*******************************************************************************************************************/
-  SignalSink::SignalSink(double defaultValue)
-  : historyLength(0)
-  {
-    signalSource = boost::static_pointer_cast<SignalSource>(
-        boost::make_shared<ConstantSignalSource>(defaultValue) );
-  }
+/*******************************************************************************************************************/
+SignalSink::SignalSink(double defaultValue) : historyLength(0) {
+  signalSource = boost::static_pointer_cast<SignalSource>(
+      boost::make_shared<ConstantSignalSource>(defaultValue));
+}
 
-  /*******************************************************************************************************************/
-  void SignalSink::connect(const boost::shared_ptr<SignalSource> &source) {
-    signalSource = source;
-    signalSource->setMaxHistoryLength(historyLength);
-  }
+/*******************************************************************************************************************/
+void SignalSink::connect(const boost::shared_ptr<SignalSource> &source) {
+  signalSource = source;
+  signalSource->setMaxHistoryLength(historyLength);
+}
 
-  /*******************************************************************************************************************/
-  void SignalSink::setMaxHistoryLength(VirtualTime timeDifference) {
-    historyLength = timeDifference;
-    signalSource->setMaxHistoryLength(historyLength);
-  }
+/*******************************************************************************************************************/
+void SignalSink::setMaxHistoryLength(VirtualTime timeDifference) {
+  historyLength = timeDifference;
+  signalSource->setMaxHistoryLength(historyLength);
+}
 
-}} // namespace ChimeraTK::VirtuaLab
+} // namespace VirtualLab
+} // namespace ChimeraTK
