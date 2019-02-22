@@ -18,10 +18,9 @@ using namespace ChimeraTK::VirtualLab;
  * framework
  */
 class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice> {
-public:
-  CONSTRUCTOR(VirtualTestDevice, bigPlain(this, "PERFTEST", "BIGPLAIN"),
-              someMuxedRegister(this, "APP0", "DAQ0_ADCA"), myTimer(this),
-              timers(this), currentOffset(0), readNext(0))
+ public:
+  CONSTRUCTOR(VirtualTestDevice, bigPlain(this, "PERFTEST", "BIGPLAIN"), someMuxedRegister(this, "APP0", "DAQ0_ADCA"),
+      myTimer(this), timers(this), currentOffset(0), readNext(0))
   END_CONSTRUCTOR
 
   virtual ~VirtualTestDevice() {}
@@ -54,8 +53,7 @@ public:
   int32_t readNext;
 
   /// define the state machine structure
-  DECLARE_MAIN_STATE_MACHINE(
-      DevIdle(),
+  DECLARE_MAIN_STATE_MACHINE(DevIdle(),
       (
           // =======================================================================================================
 
@@ -69,7 +67,6 @@ public:
 REGISTER_BACKEND_TYPE(VirtualTestDevice);
 
 int main() {
-
   VirtualTestDevice dev("test.mapp");
 
   dev.open();
@@ -80,7 +77,7 @@ int main() {
 
   // prepare a buffer
   const size_t nel = 10000000; // 10 million
-  int32_t *buffer = new int32_t[nel];
+  int32_t* buffer = new int32_t[nel];
 
   // prepare timers to measure the wall time
   boost::timer theTimer;
@@ -91,7 +88,7 @@ int main() {
 
   // run multiple iterations to increase precision
   const int niter = 10;
-  for (int iter = 0; iter < niter; iter++) {
+  for(int iter = 0; iter < niter; iter++) {
     double sum;
 
     //
@@ -101,15 +98,14 @@ int main() {
     theTimer.restart();
 
     // fill the buffer
-    for (unsigned int i = 0; i < nel; i++) {
+    for(unsigned int i = 0; i < nel; i++) {
       int val = w16(rng);
       buffer[i] = val;
     }
 
     // compute sum
     sum = 0.;
-    for (unsigned int i = 0; i < nel; i++)
-      sum += buffer[i];
+    for(unsigned int i = 0; i < nel; i++) sum += buffer[i];
     std::cout << "iter = " << iter << "n   sum = " << sum << "\r" << std::flush;
 
     nullTime += theTimer.elapsed();
@@ -120,19 +116,17 @@ int main() {
     theTimer.restart();
 
     // fill the buffer
-    for (unsigned int i = 0; i < nel; i++) {
+    for(unsigned int i = 0; i < nel; i++) {
       int val = w16(rng);
       buffer[i] = val;
     }
 
     // copy to register using raw write
-    for (unsigned int i = 0; i < nel; i++)
-      dev._barContents[2][i] = buffer[i];
+    for(unsigned int i = 0; i < nel; i++) dev._barContents[2][i] = buffer[i];
 
     // compute sum
     sum = 0.;
-    for (unsigned int i = 0; i < nel; i++)
-      sum += dev._barContents[2][i];
+    for(unsigned int i = 0; i < nel; i++) sum += dev._barContents[2][i];
     std::cout << "iter = " << iter << "r   sum = " << sum << "\r" << std::flush;
 
     rawTime += theTimer.elapsed();
@@ -143,19 +137,17 @@ int main() {
     theTimer.restart();
 
     // fill the buffer
-    for (unsigned int i = 0; i < nel; i++) {
+    for(unsigned int i = 0; i < nel; i++) {
       int val = w16(rng);
       buffer[i] = val;
     }
 
     // copy to register using accessor
-    for (unsigned int i = 0; i < nel; i++)
-      dev.bigPlain[i] = buffer[i];
+    for(unsigned int i = 0; i < nel; i++) dev.bigPlain[i] = buffer[i];
 
     // compute sum
     sum = 0.;
-    for (unsigned int i = 0; i < nel; i++)
-      sum += dev._barContents[2][i];
+    for(unsigned int i = 0; i < nel; i++) sum += dev._barContents[2][i];
     std::cout << "iter = " << iter << "a   sum = " << sum << "\r" << std::flush;
 
     accessorTime += theTimer.elapsed();
@@ -170,36 +162,31 @@ int main() {
     dev.currentOffset = 0;
 
     // fill the buffer
-    for (unsigned int i = 0; i < nel; i++) {
+    for(unsigned int i = 0; i < nel; i++) {
       int val = w16(rng);
       buffer[i] = val;
     }
 
     // copy to register using timer events and the register accessor
-    for (unsigned int i = 0; i < nel; i++) {
+    for(unsigned int i = 0; i < nel; i++) {
       dev.readNext = buffer[i];
       dev.timers.advance(1);
     }
 
     // compute sum
     sum = 0.;
-    for (unsigned int i = 0; i < nel; i++)
-      sum += dev._barContents[2][i];
+    for(unsigned int i = 0; i < nel; i++) sum += dev._barContents[2][i];
     std::cout << "iter = " << iter << "s   sum = " << sum << "\r" << std::flush;
 
     statemachineTime += theTimer.elapsed();
   }
 
   std::cout << "Performed " << nel * niter << " writes each." << std::endl;
-  std::cout << "CPU time used using no write: " << nullTime << " seconds"
+  std::cout << "CPU time used using no write: " << nullTime << " seconds" << std::endl;
+  std::cout << "CPU time used using raw write: " << rawTime << " seconds" << std::endl;
+  std::cout << "CPU time used using accessor write: " << accessorTime << " seconds" << std::endl;
+  std::cout << "CPU time used using state machine virtual timer and accessor write: " << statemachineTime << " seconds"
             << std::endl;
-  std::cout << "CPU time used using raw write: " << rawTime << " seconds"
-            << std::endl;
-  std::cout << "CPU time used using accessor write: " << accessorTime
-            << " seconds" << std::endl;
-  std::cout
-      << "CPU time used using state machine virtual timer and accessor write: "
-      << statemachineTime << " seconds" << std::endl;
 
   return 0;
 }

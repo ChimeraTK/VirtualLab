@@ -42,16 +42,15 @@ namespace mpl = boost::mpl;
  * instances for the events as well.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_EVENT(name)                                                    \
+#define DECLARE_EVENT(name)                                                                                            \
   class name : public msm::front::euml::euml_event<name> {}
 
 /** \def DECLARE_STATE(name)
  * Declare a plain state, without any entry or exit functions etc.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_STATE(name)                                                    \
-  class name : public msm::front::state<>,                                     \
-               public msm::front::euml::euml_state<name> {}
+#define DECLARE_STATE(name)                                                                                            \
+  class name : public msm::front::state<>, public msm::front::euml::euml_state<name> {}
 
 /** \def DECLARE_LOGGING_STATE(name)
  * Declare a logging state. Entry and exit of this state will be looged to
@@ -59,16 +58,17 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: this macro is used in the test, but output is not
  * actually tested) */
-#define DECLARE_LOGGING_STATE(name)                                            \
-  class name : public msm::front::state<>,                                     \
-               public msm::front::euml::euml_state<name> {                     \
-  public:                                                                      \
-    template <class Event, class FSM> void on_entry(Event const &, FSM &) {    \
-      std::cout << "Entering state: " << #name << std::endl;                   \
-    }                                                                          \
-    template <class Event, class FSM> void on_exit(Event const &, FSM &) {     \
-      std::cout << "Leaving state: " << #name << std::endl;                    \
-    }                                                                          \
+#define DECLARE_LOGGING_STATE(name)                                                                                    \
+  class name : public msm::front::state<>, public msm::front::euml::euml_state<name> {                                 \
+   public:                                                                                                             \
+    template<class Event, class FSM>                                                                                   \
+    void on_entry(Event const&, FSM&) {                                                                                \
+      std::cout << "Entering state: " << #name << std::endl;                                                           \
+    }                                                                                                                  \
+    template<class Event, class FSM>                                                                                   \
+    void on_exit(Event const&, FSM&) {                                                                                 \
+      std::cout << "Leaving state: " << #name << std::endl;                                                            \
+    }                                                                                                                  \
   }
 
 /** \def DECLARE_REGISTER(UserType, name)
@@ -77,8 +77,7 @@ namespace mpl = boost::mpl;
  * handled internally using the FixedPointConverter.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_REGISTER(UserType, name)                                       \
-  ChimeraTK::DummyRegisterAccessor<UserType> name
+#define DECLARE_REGISTER(UserType, name) ChimeraTK::DummyRegisterAccessor<UserType> name
 
 /** \def DECLARE_MUXED_REGISTER(UserType, name)
  * Declare a dummy register accessor for multiplexed 2D-array registers.
@@ -86,8 +85,7 @@ namespace mpl = boost::mpl;
  * handled internally using the FixedPointConverter.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_MUXED_REGISTER(UserType, name)                                 \
-  ChimeraTK::DummyMultiplexedRegisterAccessor<UserType> name
+#define DECLARE_MUXED_REGISTER(UserType, name) ChimeraTK::DummyMultiplexedRegisterAccessor<UserType> name
 
 /** \def WRITEEVENT_TABLE
  * Provide a "table" of events and register names using the
@@ -95,10 +93,10 @@ namespace mpl = boost::mpl;
  * with END_WRITEEVENT_TABLE.
  *
  * (test coverage hint: these two macros are used in the test) */
-#define WRITEEVENT_TABLE                                                       \
-  void regWriteEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {     \
-    (void)bar;                                                                 \
-    (void)address;                                                             \
+#define WRITEEVENT_TABLE                                                                                               \
+  void regWriteEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {                                             \
+    (void)bar;                                                                                                         \
+    (void)address;                                                                                                     \
     (void)sizeInBytes;
 
 #define END_WRITEEVENT_TABLE }
@@ -109,10 +107,10 @@ namespace mpl = boost::mpl;
  * with END_READEVENT_TABLE.
  *
  * (test coverage hint: these two macros are used in the test) */
-#define READEVENT_TABLE                                                        \
-  void regReadEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {      \
-    (void)bar;                                                                 \
-    (void)address;                                                             \
+#define READEVENT_TABLE                                                                                                \
+  void regReadEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {                                              \
+    (void)bar;                                                                                                         \
+    (void)address;                                                                                                     \
     (void)sizeInBytes;
 
 #define END_READEVENT_TABLE }
@@ -127,19 +125,20 @@ namespace mpl = boost::mpl;
  * semicolon in between - starting a new line is allowed, though!).
  *
  * (test coverage hint: this macro is used in the test) */
-#define CONNECT_REGISTER_EVENT(eventName, regsterAccessor)                     \
-  {                                                                            \
-    if (regsterAccessor.isAddressInRange(bar, address, sizeInBytes)) {         \
-      try {                                                                    \
-        theStateMachine.process_event(eventName());                            \
-      } catch (...) {                                                          \
-        std::cerr << "ERROR in VirtualLabBackend: Exception thrown while "     \
-                     "processing register event. The state "                   \
-                  << "machine is now in an unusable condition. Make sure to "  \
-                     "catch all exceptions in your "                           \
-                  << "actions!" << std::endl;                                  \
-      }                                                                        \
-    }                                                                          \
+#define CONNECT_REGISTER_EVENT(eventName, regsterAccessor)                                                             \
+  {                                                                                                                    \
+    if(regsterAccessor.isAddressInRange(bar, address, sizeInBytes)) {                                                  \
+      try {                                                                                                            \
+        theStateMachine.process_event(eventName());                                                                    \
+      }                                                                                                                \
+      catch(...) {                                                                                                     \
+        std::cerr << "ERROR in VirtualLabBackend: Exception thrown while "                                             \
+                     "processing register event. The state "                                                           \
+                  << "machine is now in an unusable condition. Make sure to "                                          \
+                     "catch all exceptions in your "                                                                   \
+                  << "actions!" << std::endl;                                                                          \
+      }                                                                                                                \
+    }                                                                                                                  \
   }
 
 /** \def DECLARE_REGISTER_GUARD(guardName, condition)
@@ -152,20 +151,18 @@ namespace mpl = boost::mpl;
  * always the first word written).
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_REGISTER_GUARD(guardName, condition)                           \
-  BOOST_MSM_EUML_ACTION(guardName##_){                                         \
-      template <class Fsm, class Evt, class SourceState, class TargetState>    \
-      bool                                                                     \
-      operator()(Evt const &, Fsm &fsm, SourceState &,                         \
-                 TargetState &){return fsm.dev->guardName##_funct();           \
-  }                                                                            \
-  }                                                                            \
-  ;                                                                            \
-  typedef BOOST_TYPEOF(guardName##_) guardName;                                \
-  bool guardName##_funct() {                                                   \
-    int32_t value = *lastWrittenData;                                          \
-    (void)value;                                                               \
-    return (condition);                                                        \
+#define DECLARE_REGISTER_GUARD(guardName, condition)                                                                   \
+  BOOST_MSM_EUML_ACTION(guardName##_){                                                                                 \
+      template<class Fsm, class Evt, class SourceState, class TargetState> bool operator()(                            \
+          Evt const&, Fsm& fsm, SourceState&, TargetState&){return fsm.dev->guardName##_funct();                       \
+  }                                                                                                                    \
+  }                                                                                                                    \
+  ;                                                                                                                    \
+  typedef BOOST_TYPEOF(guardName##_) guardName;                                                                        \
+  bool guardName##_funct() {                                                                                           \
+    int32_t value = *lastWrittenData;                                                                                  \
+    (void)value;                                                                                                       \
+    return (condition);                                                                                                \
   }
 
 /** \def DECLARE_GUARD(guardName)
@@ -175,18 +172,15 @@ namespace mpl = boost::mpl;
  * END_DECLARE_GUARD.
  *
  * (test coverage hint: these two macros are used in the test) */
-#define DECLARE_GUARD(guardName)                                               \
-  BOOST_MSM_EUML_ACTION(guardName##_){                                         \
-      template <class Fsm, class Evt, class SourceState, class TargetState>    \
-      bool                                                                     \
-      operator()(Evt const &, Fsm &fsm, SourceState &,                         \
-                 TargetState &){return fsm.dev->guardName##_funct();           \
-  }                                                                            \
-  }                                                                            \
-  ;                                                                            \
-  typedef BOOST_TYPEOF(guardName##_) guardName;                                \
+#define DECLARE_GUARD(guardName)                                                                                       \
+  BOOST_MSM_EUML_ACTION(guardName##_){                                                                                 \
+      template<class Fsm, class Evt, class SourceState, class TargetState> bool operator()(                            \
+          Evt const&, Fsm& fsm, SourceState&, TargetState&){return fsm.dev->guardName##_funct();                       \
+  }                                                                                                                    \
+  }                                                                                                                    \
+  ;                                                                                                                    \
+  typedef BOOST_TYPEOF(guardName##_) guardName;                                                                        \
   bool guardName##_funct() {
-
 #define END_DECLARE_GUARD }
 
 /** \def DECLARE_ACTION(actionName)
@@ -195,18 +189,15 @@ namespace mpl = boost::mpl;
  * terminated with END_DECLARE_ACTION.
  *
  * (test coverage hint: these two macros are used in the test) */
-#define DECLARE_ACTION(actionName)                                             \
-  BOOST_MSM_EUML_ACTION(actionName##_){                                        \
-      template <class Fsm, class Evt, class SourceState, class TargetState>    \
-      void                                                                     \
-      operator()(Evt const &, Fsm &fsm, SourceState &,                         \
-                 TargetState &){fsm.dev->actionName##_funct();                 \
-  }                                                                            \
-  }                                                                            \
-  ;                                                                            \
-  typedef BOOST_TYPEOF(actionName##_) actionName;                              \
+#define DECLARE_ACTION(actionName)                                                                                     \
+  BOOST_MSM_EUML_ACTION(actionName##_){                                                                                \
+      template<class Fsm, class Evt, class SourceState, class TargetState> void operator()(                            \
+          Evt const&, Fsm& fsm, SourceState&, TargetState&){fsm.dev->actionName##_funct();                             \
+  }                                                                                                                    \
+  }                                                                                                                    \
+  ;                                                                                                                    \
+  typedef BOOST_TYPEOF(actionName##_) actionName;                                                                      \
   void actionName##_funct() {
-
 #define END_DECLARE_ACTION }
 
 /** \def DECLARE_TIMER(name,event)
@@ -220,21 +211,18 @@ namespace mpl = boost::mpl;
  * timers part of this group, previously declared using DECLARE_TIMER.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_TIMER_GROUP(name, ...)                                         \
-  typedef boost::fusion::vector<DECLARE_TIMER_GROUP_DECLARE_VECTOR(            \
-      __VA_ARGS__)>                                                            \
-      name##__;                                                                \
-  class name##_ : public TimerGroup<name##__> {                                \
-  public:                                                                      \
-    name##_(dummyDeviceType *_dev) : TimerGroup(), dev(_dev) {                 \
-      DECLARE_TIMER_GROUP_MAKEMAP(__VA_ARGS__)                                 \
-      timers = std::make_unique<name##__>(                                     \
-          DECLARE_TIMER_GROUP_INIT_VECTOR(__VA_ARGS__));                       \
-    }                                                                          \
-                                                                               \
-  protected:                                                                   \
-    dummyDeviceType *dev;                                                      \
-  };                                                                           \
+#define DECLARE_TIMER_GROUP(name, ...)                                                                                 \
+  typedef boost::fusion::vector<DECLARE_TIMER_GROUP_DECLARE_VECTOR(__VA_ARGS__)> name##__;                             \
+  class name##_ : public TimerGroup<name##__> {                                                                        \
+   public:                                                                                                             \
+    name##_(dummyDeviceType* _dev) : TimerGroup(), dev(_dev) {                                                         \
+      DECLARE_TIMER_GROUP_MAKEMAP(__VA_ARGS__)                                                                         \
+      timers = std::make_unique<name##__>(DECLARE_TIMER_GROUP_INIT_VECTOR(__VA_ARGS__));                               \
+    }                                                                                                                  \
+                                                                                                                       \
+   protected:                                                                                                          \
+    dummyDeviceType* dev;                                                                                              \
+  };                                                                                                                   \
   name##_ name
 
 /** \def DECLARE_STATE_MACHINE(stateMachineName, initialState, transitionTable)
@@ -248,16 +236,15 @@ namespace mpl = boost::mpl;
  * syntax.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_STATE_MACHINE(stateMachineName, initialState, transitionTable) \
-  BOOST_MSM_EUML_TRANSITION_TABLE((transitionTable), stateMachineName##_table) \
-  BOOST_MSM_EUML_DECLARE_STATE_MACHINE(                                        \
-      (stateMachineName##_table, init_ << initialState), stateMachineName##__) \
-  class stateMachineName##_ : public stateMachineName##__ {                    \
-  public:                                                                      \
-    stateMachineName##_() : stateMachineName##__() {}                          \
-    void setDummyDevice(dummyDeviceType *_dev) { dev = _dev; }                 \
-    dummyDeviceType *dev;                                                      \
-  };                                                                           \
+#define DECLARE_STATE_MACHINE(stateMachineName, initialState, transitionTable)                                         \
+  BOOST_MSM_EUML_TRANSITION_TABLE((transitionTable), stateMachineName##_table)                                         \
+  BOOST_MSM_EUML_DECLARE_STATE_MACHINE((stateMachineName##_table, init_ << initialState), stateMachineName##__)        \
+  class stateMachineName##_ : public stateMachineName##__ {                                                            \
+   public:                                                                                                             \
+    stateMachineName##_() : stateMachineName##__() {}                                                                  \
+    void setDummyDevice(dummyDeviceType* _dev) { dev = _dev; }                                                         \
+    dummyDeviceType* dev;                                                                                              \
+  };                                                                                                                   \
   typedef msm::back::state_machine<stateMachineName##_> stateMachineName
 
 /** \def DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)
@@ -267,17 +254,15 @@ namespace mpl = boost::mpl;
  * this framework.
  *
  * (test coverage hint: this macro is used in the test) */
-#define DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)              \
-  BOOST_MSM_EUML_TRANSITION_TABLE((transitionTable), mainStateMachine_table)   \
-  BOOST_MSM_EUML_DECLARE_STATE_MACHINE(                                        \
-      (mainStateMachine_table, init_ << initialState), mainStateMachine__)     \
-  class mainStateMachine_ : public mainStateMachine__ {                        \
-  public:                                                                      \
-    mainStateMachine_(dummyDeviceType *_dev)                                   \
-        : mainStateMachine__(), dev(_dev) {}                                   \
-    dummyDeviceType *dev;                                                      \
-  };                                                                           \
-  typedef msm::back::state_machine<mainStateMachine_> mainStateMachine;        \
+#define DECLARE_MAIN_STATE_MACHINE(initialState, transitionTable)                                                      \
+  BOOST_MSM_EUML_TRANSITION_TABLE((transitionTable), mainStateMachine_table)                                           \
+  BOOST_MSM_EUML_DECLARE_STATE_MACHINE((mainStateMachine_table, init_ << initialState), mainStateMachine__)            \
+  class mainStateMachine_ : public mainStateMachine__ {                                                                \
+   public:                                                                                                             \
+    mainStateMachine_(dummyDeviceType* _dev) : mainStateMachine__(), dev(_dev) {}                                      \
+    dummyDeviceType* dev;                                                                                              \
+  };                                                                                                                   \
+  typedef msm::back::state_machine<mainStateMachine_> mainStateMachine;                                                \
   mainStateMachine theStateMachine
 
 /** \def CONSTRUCTOR(name,...)
@@ -306,45 +291,36 @@ namespace mpl = boost::mpl;
  * sources etc.) you must ensure proper locking yourself.
  *
  * (test coverage hint: these two macros are used in the test) */
-#define CONSTRUCTOR(name, ...)                                                 \
-  /* createInstance() function used by the BackendFactory. Creates only one    \
-   * instance per instance name! */                                            \
-  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(           \
-      std::string address, std::map<std::string, std::string> parameters) {    \
-    if (parameters["map"].empty()) {                                           \
-      throw ChimeraTK::logic_error(                                            \
-          "No map file name given in the device descriptor.");                 \
-    }                                                                          \
-    return returnInstance<name>(                                               \
-        address, convertPathRelativeToDmapToAbs(parameters["map"]));           \
-  }                                                                            \
-  /* Static and global instance map (plain static members don't work           \
-   * header-only!) */                                                          \
-  static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>>    \
-      &getInstanceMap() {                                                      \
-    static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>>  \
-        instanceMap;                                                           \
-    return instanceMap;                                                        \
-  }                                                                            \
-  /* Class to register the backend type with the factory. */                   \
-  class BackendRegisterer {                                                    \
-  public:                                                                      \
-    BackendRegisterer() : dummy(0) {                                           \
-      std::cout                                                                \
-          << "VirtualLabBackend::BackendRegisterer: registering backend type " \
-          << #name << std::endl;                                               \
-      ChimeraTK::BackendFactory::getInstance().registerBackendType(            \
-          #name, &name::createInstance);                                       \
-    }                                                                          \
-    /* dummy variable we can reference to force linking the object code when   \
-     * just using the header */                                                \
-    int dummy;                                                                 \
-  };                                                                           \
-  static BackendRegisterer backendRegisterer;                                  \
-  /* Actual constructor of the VirtualLabBackend class. */                     \
-  name(std::string mapFileName)                                                \
-      : VirtualLabBackend(mapFileName), ##__VA_ARGS__, theStateMachine(this) {
-
+#define CONSTRUCTOR(name, ...)                                                                                         \
+  /* createInstance() function used by the BackendFactory. Creates only one                                            \
+   * instance per instance name! */                                                                                    \
+  static boost::shared_ptr<ChimeraTK::DeviceBackend> createInstance(                                                   \
+      std::string address, std::map<std::string, std::string> parameters) {                                            \
+    if(parameters["map"].empty()) {                                                                                    \
+      throw ChimeraTK::logic_error("No map file name given in the device descriptor.");                                \
+    }                                                                                                                  \
+    return returnInstance<name>(address, convertPathRelativeToDmapToAbs(parameters["map"]));                           \
+  }                                                                                                                    \
+  /* Static and global instance map (plain static members don't work                                                   \
+   * header-only!) */                                                                                                  \
+  static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>>& getInstanceMap() {                        \
+    static std::map<std::string, boost::shared_ptr<ChimeraTK::DeviceBackend>> instanceMap;                             \
+    return instanceMap;                                                                                                \
+  }                                                                                                                    \
+  /* Class to register the backend type with the factory. */                                                           \
+  class BackendRegisterer {                                                                                            \
+   public:                                                                                                             \
+    BackendRegisterer() : dummy(0) {                                                                                   \
+      std::cout << "VirtualLabBackend::BackendRegisterer: registering backend type " << #name << std::endl;            \
+      ChimeraTK::BackendFactory::getInstance().registerBackendType(#name, &name::createInstance);                      \
+    }                                                                                                                  \
+    /* dummy variable we can reference to force linking the object code when                                           \
+     * just using the header */                                                                                        \
+    int dummy;                                                                                                         \
+  };                                                                                                                   \
+  static BackendRegisterer backendRegisterer;                                                                          \
+  /* Actual constructor of the VirtualLabBackend class. */                                                             \
+  name(std::string mapFileName) : VirtualLabBackend(mapFileName), ##__VA_ARGS__, theStateMachine(this) {
 #define END_CONSTRUCTOR }
 
 /** \def INIT_SUB_STATE_MACHINE(name)
@@ -352,8 +328,7 @@ namespace mpl = boost::mpl;
  * constructor.
  *
  * (test coverage hint: this macro is used in the test) */
-#define INIT_SUB_STATE_MACHINE(name)                                           \
-  theStateMachine.get_state<name *>()->setDummyDevice(this)
+#define INIT_SUB_STATE_MACHINE(name) theStateMachine.get_state<name*>()->setDummyDevice(this)
 
 /** \def REGISTER_BACKEND_TYPE(name)
  * Register backend type with the BackendFactory. Must be placed into the C++
@@ -361,187 +336,179 @@ namespace mpl = boost::mpl;
  * backend factory (not into the header file)!
  *
  * (test coverage hint: this macro is used in the test) */
-#define REGISTER_BACKEND_TYPE(name)                                            \
-  name::BackendRegisterer name::backendRegisterer
+#define REGISTER_BACKEND_TYPE(name) name::BackendRegisterer name::backendRegisterer
 
-namespace ChimeraTK {
-namespace VirtualLab {
+namespace ChimeraTK { namespace VirtualLab {
 
-/*********************************************************************************************************************/
-/** Base class for VirtualLab dummy devices.
- *
- *  The VirtualLabBackend is an extension of the DummyBackend. Like its base
- * class, it implements a set of registers defined in a map file in memory.
- * VirtualLabBackend helps implementing the functionality, which will be
- * provided by the firmware and hardware in case of a real device. The
- * implementation of firmware functionality is realised using a state machine.
- * Inputs and outputs of the simulated device can be added using the SignalSink
- * and SignalSource classes, which can then be connected with other VirtualLab
- * components in the virtual lab setup code.
- *
- *  Use the following macros to build your VirtualLabBackend:
- *  - \ref CONSTRUCTOR to create the constructor including parts needed for
- * registration with the BackendFactory
- *  - \ref REGISTER_BACKEND_TYPE needs to be placed in the C++ file to register
- * with the BackendFactory
- *  - \ref DECLARE_REGISTER and DECLARE_MUXED_REGISTER to obtain register
- * accessors for registers
- *  - \ref DECLARE_MAIN_STATE_MACHINE to declare your main state machine with
- * transition table
- *  - \ref DECLARE_STATE_MACHINE to declare any sub state machine
- *  - \ref DECLARE_STATE, \ref DECLARE_EVENT, \ref DECLARE_GUARD and \ref
- * DECLARE_ACTION to build state machine components
- *  - \ref DECLARE_LOGGING_STATE to create states with debug output to the
- * console
- *  - \ref DECLARE_REGISTER_GUARD to declare a guard condition using a register
- *  - \ref WRITEEVENT_TABLE, \ref READEVENT_TABLE and \ref
- * CONNECT_REGISTER_EVENT to create events firing on reading or writing
- * registers
- *  - \ref DECLARE_TIMER and \ref DECLARE_TIMER_GROUP to create timers and put
- * them into a group
- *  - \ref INIT_SUB_STATE_MACHINE inside the \ref CONSTRUCTOR to initialise a
- * sub state machine created with \ref DECLARE_STATE_MACHINE
- *
- *  Note: The bare minimum usually is one \ref DECLARE_STATE_MACHINE with one
- * \ref DECLARE_STATE, plus one \ref DECLARE_TIMER_GROUP containing one timer.
- */
-template <class derived>
-class VirtualLabBackend : public ChimeraTK::DummyBackend {
-public:
-  // constructor via standard device model decription (as used by the
-  // DeviceFactory)
-  VirtualLabBackend(std::string mapFileName)
-      : ChimeraTK::DummyBackend(mapFileName), lastWrittenData(NULL),
-        lastWrittenSize(0) {
-    // start the main state machine
-    static_cast<derived &>(*this).theStateMachine.start();
-  }
+  /*********************************************************************************************************************/
+  /** Base class for VirtualLab dummy devices.
+   *
+   *  The VirtualLabBackend is an extension of the DummyBackend. Like its base
+   * class, it implements a set of registers defined in a map file in memory.
+   * VirtualLabBackend helps implementing the functionality, which will be
+   * provided by the firmware and hardware in case of a real device. The
+   * implementation of firmware functionality is realised using a state machine.
+   * Inputs and outputs of the simulated device can be added using the SignalSink
+   * and SignalSource classes, which can then be connected with other VirtualLab
+   * components in the virtual lab setup code.
+   *
+   *  Use the following macros to build your VirtualLabBackend:
+   *  - \ref CONSTRUCTOR to create the constructor including parts needed for
+   * registration with the BackendFactory
+   *  - \ref REGISTER_BACKEND_TYPE needs to be placed in the C++ file to register
+   * with the BackendFactory
+   *  - \ref DECLARE_REGISTER and DECLARE_MUXED_REGISTER to obtain register
+   * accessors for registers
+   *  - \ref DECLARE_MAIN_STATE_MACHINE to declare your main state machine with
+   * transition table
+   *  - \ref DECLARE_STATE_MACHINE to declare any sub state machine
+   *  - \ref DECLARE_STATE, \ref DECLARE_EVENT, \ref DECLARE_GUARD and \ref
+   * DECLARE_ACTION to build state machine components
+   *  - \ref DECLARE_LOGGING_STATE to create states with debug output to the
+   * console
+   *  - \ref DECLARE_REGISTER_GUARD to declare a guard condition using a register
+   *  - \ref WRITEEVENT_TABLE, \ref READEVENT_TABLE and \ref
+   * CONNECT_REGISTER_EVENT to create events firing on reading or writing
+   * registers
+   *  - \ref DECLARE_TIMER and \ref DECLARE_TIMER_GROUP to create timers and put
+   * them into a group
+   *  - \ref INIT_SUB_STATE_MACHINE inside the \ref CONSTRUCTOR to initialise a
+   * sub state machine created with \ref DECLARE_STATE_MACHINE
+   *
+   *  Note: The bare minimum usually is one \ref DECLARE_STATE_MACHINE with one
+   * \ref DECLARE_STATE, plus one \ref DECLARE_TIMER_GROUP containing one timer.
+   */
+  template<class derived>
+  class VirtualLabBackend : public ChimeraTK::DummyBackend {
+   public:
+    // constructor via standard device model decription (as used by the
+    // DeviceFactory)
+    VirtualLabBackend(std::string mapFileName)
+    : ChimeraTK::DummyBackend(mapFileName), lastWrittenData(NULL), lastWrittenSize(0) {
+      // start the main state machine
+      static_cast<derived&>(*this).theStateMachine.start();
+    }
 
-  virtual ~VirtualLabBackend() {}
+    virtual ~VirtualLabBackend() {}
 
-  /// override writeArea to fire the events
-  void write(uint8_t bar, uint32_t address, int32_t const *data,
-             size_t sizeInBytes) override {
-    std::lock_guard<std::mutex> guard(deviceLock);
+    /// override writeArea to fire the events
+    void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override {
+      std::lock_guard<std::mutex> guard(deviceLock);
 
-    // save as last written data, for use inside guards of the events we may
-    // trigger now
-    lastWrittenData = data;
-    lastWrittenSize = sizeInBytes;
+      // save as last written data, for use inside guards of the events we may
+      // trigger now
+      lastWrittenData = data;
+      lastWrittenSize = sizeInBytes;
 
-    // perform the actual write
-    DummyBackend::write(bar, address, data, sizeInBytes);
+      // perform the actual write
+      DummyBackend::write(bar, address, data, sizeInBytes);
 
-    // trigger events
-    regWriteEvents(bar, address, sizeInBytes);
-  }
+      // trigger events
+      regWriteEvents(bar, address, sizeInBytes);
+    }
 
-  /// override readArea to fire the events
-  void read(uint8_t bar, uint32_t address, int32_t *data,
-            size_t sizeInBytes) override {
-    std::lock_guard<std::mutex> guard(deviceLock);
+    /// override readArea to fire the events
+    void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
+      std::lock_guard<std::mutex> guard(deviceLock);
 
-    // trigger events
-    regReadEvents(bar, address, sizeInBytes);
+      // trigger events
+      regReadEvents(bar, address, sizeInBytes);
 
-    // perform the actual write
-    DummyBackend::read(bar, address, data, sizeInBytes);
-  }
+      // perform the actual write
+      DummyBackend::read(bar, address, data, sizeInBytes);
+    }
 
-protected:
-  /// define the dummyDeviceType used in the macros
-  typedef derived dummyDeviceType;
+   protected:
+    /// define the dummyDeviceType used in the macros
+    typedef derived dummyDeviceType;
 
-  /// trigger register-write events. Will be implemented using WRITE_EVENT_TABLE
-  /// in the device implementation
-  virtual void regWriteEvents(uint8_t /* bar */, uint32_t /* address */,
-                              size_t /* sizeInBytes */) {} // LCOV_EXCL_LINE
+    /// trigger register-write events. Will be implemented using WRITE_EVENT_TABLE
+    /// in the device implementation
+    virtual void regWriteEvents(uint8_t /* bar */, uint32_t /* address */, size_t /* sizeInBytes */) {
+    } // LCOV_EXCL_LINE
 
-  /// trigger register-read events. Will be implemented using READ_EVENT_TABLE
-  /// in the device implementation
-  virtual void regReadEvents(uint8_t /* bar */, uint32_t /* address */,
-                             size_t /* sizeInBytes */) {} // LCOV_EXCL_LINE
+    /// trigger register-read events. Will be implemented using READ_EVENT_TABLE
+    /// in the device implementation
+    virtual void regReadEvents(uint8_t /* bar */, uint32_t /* address */, size_t /* sizeInBytes */) {} // LCOV_EXCL_LINE
 
-  /// VirtualDevice::Timer class
-  template <class timerEvent> class Timer {
-  public:
-    Timer(derived *_dev) : dev(_dev), request(-1), current(0) {}
+    /// VirtualDevice::Timer class
+    template<class timerEvent>
+    class Timer {
+     public:
+      Timer(derived* _dev) : dev(_dev), request(-1), current(0) {}
 
-    /// Set the timer to fire in tval
-    void set(VirtualTime tval) { request = tval + current; }
+      /// Set the timer to fire in tval
+      void set(VirtualTime tval) { request = tval + current; }
 
-    /// Clear the timer (so it will not fire any more unless it is set again)
-    void clear() { request = -1; }
+      /// Clear the timer (so it will not fire any more unless it is set again)
+      void clear() { request = -1; }
 
-    /// Advance the timer's current time by tval. Returns true if the timer was
-    /// fired. If tval < 0 this function does nothing. Note: calling this
-    /// function with tval > getRemaining() will fire the event only a single
-    /// time!
-    bool advance(VirtualTime tval) {
-      if (tval < 0)
-        return false;
-      current += tval;
-      if (request > 0 && current >= request) {
-        request = -1;
-        try {
-          dev->theStateMachine.process_event(timerEvent());
-        } catch (...) {
-          std::cerr << "ERROR in VirtualLabBackend: Exception thrown while "
-                       "processing timer event. The state "
-                    << "machine is now in an unusable condition. Make sure to "
-                       "catch all exceptions in your "
-                    << "actions!" << std::endl;
+      /// Advance the timer's current time by tval. Returns true if the timer was
+      /// fired. If tval < 0 this function does nothing. Note: calling this
+      /// function with tval > getRemaining() will fire the event only a single
+      /// time!
+      bool advance(VirtualTime tval) {
+        if(tval < 0) return false;
+        current += tval;
+        if(request > 0 && current >= request) {
+          request = -1;
+          try {
+            dev->theStateMachine.process_event(timerEvent());
+          }
+          catch(...) {
+            std::cerr << "ERROR in VirtualLabBackend: Exception thrown while "
+                         "processing timer event. The state "
+                      << "machine is now in an unusable condition. Make sure to "
+                         "catch all exceptions in your "
+                      << "actions!" << std::endl;
+          }
+          return true;
         }
-        return true;
+        return false;
       }
-      return false;
-    }
 
-    /// Obtain remaining time until the timer fires. Will be negative if the
-    /// timer is not set.
-    VirtualTime getRemaining() {
-      if (request > 0) {
-        return request - current;
-      } else {
-        return -1;
+      /// Obtain remaining time until the timer fires. Will be negative if the
+      /// timer is not set.
+      VirtualTime getRemaining() {
+        if(request > 0) {
+          return request - current;
+        }
+        else {
+          return -1;
+        }
       }
-    }
 
-    /// Get current timer
-    VirtualTime getCurrent() { return current; }
+      /// Get current timer
+      VirtualTime getCurrent() { return current; }
 
-  protected:
-    /// the dummy device with the state machine
-    derived *dev;
+     protected:
+      /// the dummy device with the state machine
+      derived* dev;
 
-    /// requested time
-    VirtualTime request;
+      /// requested time
+      VirtualTime request;
 
-    /// current time
-    VirtualTime current;
+      /// current time
+      VirtualTime current;
+    };
+
+    /// last written data (into any register) and its size. Will be used in guard
+    /// conditions.
+    int32_t const* lastWrittenData;
+    size_t lastWrittenSize;
+
+    /// mutex to prevent concurrent access to the device from different threads
+    std::mutex deviceLock;
   };
 
-  /// last written data (into any register) and its size. Will be used in guard
-  /// conditions.
-  int32_t const *lastWrittenData;
-  size_t lastWrittenSize;
-
-  /// mutex to prevent concurrent access to the device from different threads
-  std::mutex deviceLock;
-};
-
-} // namespace VirtualLab
-} // namespace ChimeraTK
+}} // namespace ChimeraTK::VirtualLab
 
 // Compatibility
-namespace mtca4u {
-namespace VirtualLab {
-template <class derived>
-class VirtualLabBackend
-    : public ChimeraTK::VirtualLab::VirtualLabBackend<derived> {
-  using ChimeraTK::VirtualLab::VirtualLabBackend<derived>::VirtualLabBackend;
-};
-} // namespace VirtualLab
-} // namespace mtca4u
+namespace mtca4u { namespace VirtualLab {
+  template<class derived>
+  class VirtualLabBackend : public ChimeraTK::VirtualLab::VirtualLabBackend<derived> {
+    using ChimeraTK::VirtualLab::VirtualLabBackend<derived>::VirtualLabBackend;
+  };
+}} // namespace mtca4u::VirtualLab
 
 #endif /* VIRTUALDEVICE_H */

@@ -36,15 +36,12 @@ class VirtualLabTest;
  * framework
  */
 class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice> {
-public:
+ public:
   friend class VirtualLabTest;
 
-  CONSTRUCTOR(VirtualTestDevice, someCounter(0), readCount(0), writeCount(0),
-              writeMuxedCount(0), write42Count(0), readWithFlagCount(0),
-              someRegister(this, "APP0", "SOME_REGISTER"),
-              someMuxedRegister(this, "APP0", "DAQ0_ADCA"), myTimer(this),
-              mySecondTimer(this), timers__(this), timers(this),
-              someFlag(false), subCounter(0))
+  CONSTRUCTOR(VirtualTestDevice, someCounter(0), readCount(0), writeCount(0), writeMuxedCount(0), write42Count(0),
+      readWithFlagCount(0), someRegister(this, "APP0", "SOME_REGISTER"), someMuxedRegister(this, "APP0", "DAQ0_ADCA"),
+      myTimer(this), mySecondTimer(this), timers__(this), timers(this), someFlag(false), subCounter(0))
   INIT_SUB_STATE_MACHINE(subMachine);
   END_CONSTRUCTOR
 
@@ -150,9 +147,9 @@ public:
 
   /// derived timer group class to make the test class a friend
   class timers_ : public timers___ {
-  public:
+   public:
     friend class VirtualLabTest;
-    timers_(dummyDeviceType *_dev) : timers___(_dev){};
+    timers_(dummyDeviceType* _dev) : timers___(_dev){};
   };
   timers_ timers;
 
@@ -184,8 +181,7 @@ public:
   subCounter++;
   END_DECLARE_ACTION
   int subCounter;
-  DECLARE_STATE_MACHINE(subMachine, subInit(),
-                        (subInit() + subEvent() / subCount()));
+  DECLARE_STATE_MACHINE(subMachine, subInit(), (subInit() + subEvent() / subCount()));
 
   /// action throwing an exception
   DECLARE_EVENT(requestException);
@@ -195,8 +191,7 @@ public:
   END_DECLARE_ACTION
 
   /// define the state machine structure
-  DECLARE_MAIN_STATE_MACHINE(
-      DevClosed(),
+  DECLARE_MAIN_STATE_MACHINE(DevClosed(),
       (
           // =======================================================================================================
           // open and close the device
@@ -245,29 +240,23 @@ public:
 REGISTER_BACKEND_TYPE(VirtualTestDevice);
 /**********************************************************************************************************************/
 
-std::string convertPathRelativeToDmapToAbs(const std::string &mapfileName) {
-  std::string dmapDir = ChimeraTK::parserUtilities::extractDirectory(
-      BackendFactory::getInstance().getDMapFilePath());
-  std::string absPathToDmapDir =
-      ChimeraTK::parserUtilities::convertToAbsolutePath(dmapDir);
+std::string convertPathRelativeToDmapToAbs(const std::string& mapfileName) {
+  std::string dmapDir = ChimeraTK::parserUtilities::extractDirectory(BackendFactory::getInstance().getDMapFilePath());
+  std::string absPathToDmapDir = ChimeraTK::parserUtilities::convertToAbsolutePath(dmapDir);
   // the map file is relative to the dmap file location. Convert the relative
   // mapfilename to an absolute path
-  return ChimeraTK::parserUtilities::concatenatePaths(absPathToDmapDir,
-                                                      mapfileName);
+  return ChimeraTK::parserUtilities::concatenatePaths(absPathToDmapDir, mapfileName);
 }
 
 /**********************************************************************************************************************/
 class VirtualLabTest {
-public:
+ public:
   VirtualLabTest()
-      : onHistoryLengthChanged_argument(0), onValueNeeded_returnValue(0),
-        onValueNeeded_returnValue_increment(0), onValueNeeded_argument(0),
-        onCompute_returnValue(0), onCompute_returnValue_increment(0),
-        onCompute_argument(0) {
+  : onHistoryLengthChanged_argument(0), onValueNeeded_returnValue(0), onValueNeeded_returnValue_increment(0),
+    onValueNeeded_argument(0), onCompute_returnValue(0), onCompute_returnValue_increment(0), onCompute_argument(0) {
     std::map<std::string, std::string> params;
     params["map"] = convertPathRelativeToDmapToAbs(TEST_MAPPING_FILE);
-    device = boost::static_pointer_cast<VirtualTestDevice>(
-        VirtualTestDevice::createInstance("0", params));
+    device = boost::static_pointer_cast<VirtualTestDevice>(VirtualTestDevice::createInstance("0", params));
   }
 
   /// test the device open and close events
@@ -297,14 +286,12 @@ public:
   /// test the StateVariableSet
   void testStateVariableSet();
 
-private:
+ private:
   boost::shared_ptr<VirtualTestDevice> device;
   friend class DummyDeviceTestSuite;
 
   /// callback function for history length changed
-  void onHistoryLengthChanged(VirtualTime time) {
-    onHistoryLengthChanged_argument = time;
-  }
+  void onHistoryLengthChanged(VirtualTime time) { onHistoryLengthChanged_argument = time; }
   VirtualTime onHistoryLengthChanged_argument;
 
   /// callback function for value needed
@@ -330,28 +317,24 @@ private:
 
 /**********************************************************************************************************************/
 class VirtualLabTestSuite : public test_suite {
-public:
+ public:
   VirtualLabTestSuite() : test_suite("VirtualLab test suite") {
     boost::shared_ptr<VirtualLabTest> virtualLabTest(new VirtualLabTest);
 
-    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testDevOpenClose,
-                              virtualLabTest));
+    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testDevOpenClose, virtualLabTest));
     add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testActions, virtualLabTest));
     add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testGuards, virtualLabTest));
     add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testTimerGroup, virtualLabTest));
-    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testReadWriteEvents,
-                              virtualLabTest));
+    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testReadWriteEvents, virtualLabTest));
     add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testSubMachine, virtualLabTest));
     add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testSinkSource, virtualLabTest));
-    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testThrowException,
-                              virtualLabTest));
-    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testStateVariableSet,
-                              virtualLabTest));
+    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testThrowException, virtualLabTest));
+    add(BOOST_CLASS_TEST_CASE(&VirtualLabTest::testStateVariableSet, virtualLabTest));
   }
 };
 
 /**********************************************************************************************************************/
-test_suite *init_unit_test_suite(int /*argc*/, char * /*argv*/ []) {
+test_suite* init_unit_test_suite(int /*argc*/, char* /*argv*/ []) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE);
 
   framework::master_test_suite().p_name.value = "VirtualLab test suite";
@@ -528,7 +511,7 @@ void VirtualLabTest::testTimerGroup() {
   BOOST_CHECK(device->someCounter == 1);
 
   // advance to fire myTimer: should set it again
-  for (int i = 0; i < 5; i++) {
+  for(int i = 0; i < 5; i++) {
     device->timers.advance();
     BOOST_CHECK(device->myTimer.getRemaining() == 1 * seconds);
     BOOST_CHECK(device->mySecondTimer.getRemaining() == -1);
@@ -537,7 +520,7 @@ void VirtualLabTest::testTimerGroup() {
     BOOST_CHECK(device->timers.getRemaining("mySecondTimer") == -1);
     BOOST_CHECK(device->someCounter == 2 + i);
   }
-  for (int i = 0; i < 3; i++) {
+  for(int i = 0; i < 3; i++) {
     device->timers.advance("myTimer");
     BOOST_CHECK(device->myTimer.getRemaining() == 1 * seconds);
     BOOST_CHECK(device->mySecondTimer.getRemaining() == -1);
@@ -546,7 +529,7 @@ void VirtualLabTest::testTimerGroup() {
     BOOST_CHECK(device->timers.getRemaining("mySecondTimer") == -1);
     BOOST_CHECK(device->someCounter == 7 + i);
   }
-  for (int i = 0; i < 3; i++) {
+  for(int i = 0; i < 3; i++) {
     device->timers.advance(1 * seconds);
     BOOST_CHECK(device->myTimer.getRemaining() == 1 * seconds);
     BOOST_CHECK(device->mySecondTimer.getRemaining() == -1);
@@ -567,7 +550,7 @@ void VirtualLabTest::testTimerGroup() {
 
   // advance mySecondsTimer, should set and fire myTimer 100 times
   device->someCounter = 0;
-  for (int i = 0; i < 3; i++) {
+  for(int i = 0; i < 3; i++) {
     device->timers.advance("mySecondTimer");
     BOOST_CHECK(device->myTimer.getRemaining() == 1 * seconds);
     BOOST_CHECK(device->mySecondTimer.getRemaining() == 100 * seconds);
@@ -580,7 +563,7 @@ void VirtualLabTest::testTimerGroup() {
   // advance mySecondsTimer in a different way, should set and fire myTimer 100
   // times
   device->someCounter = 0;
-  for (int i = 0; i < 5; i++) {
+  for(int i = 0; i < 5; i++) {
     device->timers.advance(100 * seconds);
     BOOST_CHECK(device->myTimer.getRemaining() == 1 * seconds);
     BOOST_CHECK(device->mySecondTimer.getRemaining() == 100 * seconds);
@@ -592,7 +575,7 @@ void VirtualLabTest::testTimerGroup() {
 
   // just advance 1000 seconds, should set and fire myTimer 1000 times
   device->someCounter = 0;
-  for (int i = 0; i < 3; i++) {
+  for(int i = 0; i < 3; i++) {
     device->timers.advance(1000 * seconds);
     BOOST_CHECK(device->myTimer.getRemaining() == 1 * seconds);
     BOOST_CHECK(device->mySecondTimer.getRemaining() == 100 * seconds);
@@ -633,8 +616,7 @@ void VirtualLabTest::testReadWriteEvents() {
   BOOST_CHECK(device->readCount == 2);
 
   // write to muxed register
-  device->_registerMapping->getRegisterInfo(
-      "AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA", elem, "APP0");
+  device->_registerMapping->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA", elem, "APP0");
   data = 120;
   BOOST_CHECK(device->writeMuxedCount == 0);
   device->write(elem.bar, elem.address, &data, sizeof(int));
@@ -761,8 +743,7 @@ void VirtualLabTest::testSinkSource() {
   // re-connect with another constant source
   auto constSource = boost::make_shared<ConstantSignalSource>(120);
   sink.connect(boost::static_pointer_cast<SignalSource>(constSource));
-  BOOST_CHECK(sink.getValue(0 * milliseconds) ==
-              120); // the sink has no history
+  BOOST_CHECK(sink.getValue(0 * milliseconds) == 120); // the sink has no history
   BOOST_CHECK(sink.getValue(10 * milliseconds) == 120);
   BOOST_CHECK(sink.getValue(42 * milliseconds) == 120);
   BOOST_CHECK(sink.getValue(std::numeric_limits<VirtualTime>::max()) == 120);
@@ -796,10 +777,10 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK(sink.getValue(3 * milliseconds - 1) == -30.);
   BOOST_CHECK_THROW(sink.getValue(3 * milliseconds), std::runtime_error);
   source->feedValue(10 * milliseconds,
-                    666.); // this value was removed in the last call...
+      666.); // this value was removed in the last call...
   BOOST_CHECK_THROW(sink.getValue(10 * milliseconds - 1), std::runtime_error);
   source->feedValue(10 * milliseconds,
-                    666.); // this value was removed in the last call...
+      666.); // this value was removed in the last call...
   BOOST_CHECK(sink.getValue(10 * milliseconds) == 666.);
   BOOST_CHECK(sink.getValue(11 * milliseconds) == 666.);
   BOOST_CHECK(sink.getValue(12 * milliseconds - 1) == 666.);
@@ -827,8 +808,7 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK_THROW(sink.getValue(100 * days), ChimeraTK::logic_error);
 
   // test SignalSource's callback function "onHistoryLengthChanged"
-  source->setOnHistoryLengthChanged(
-      boost::bind(&VirtualLabTest::onHistoryLengthChanged, this, _1));
+  source->setOnHistoryLengthChanged(boost::bind(&VirtualLabTest::onHistoryLengthChanged, this, _1));
   onHistoryLengthChanged_argument = 0;
   sink.setMaxHistoryLength(42 * seconds);
   BOOST_CHECK(onHistoryLengthChanged_argument == 42 * seconds);
@@ -855,8 +835,7 @@ void VirtualLabTest::testSinkSource() {
 
   onValueNeeded_returnValue = 0;
   onValueNeeded_returnValue_increment = 1;
-  BOOST_CHECK(sink.getValue(444 * seconds) ==
-              104); // 4 huge gap and 100 normal gaps
+  BOOST_CHECK(sink.getValue(444 * seconds) == 104); // 4 huge gap and 100 normal gaps
   BOOST_CHECK(onValueNeeded_argument == 444 * seconds);
 }
 
@@ -866,27 +845,24 @@ void VirtualLabTest::testThrowException() {
 
   // prepare redirecting cerr
   struct cerr_redirect {
-    cerr_redirect(std::streambuf *new_buffer)
-        : old(std::cerr.rdbuf(new_buffer)) {}
+    cerr_redirect(std::streambuf* new_buffer) : old(std::cerr.rdbuf(new_buffer)) {}
 
     ~cerr_redirect() { std::cerr.rdbuf(old); }
 
-  private:
-    std::streambuf *old;
+   private:
+    std::streambuf* old;
   };
 
   // need to create our own device for this test, as it destroys the state
   // machine
   std::map<std::string, std::string> params;
   params["map"] = TEST_MAPPING_FILE;
-  auto myDevice = boost::static_pointer_cast<VirtualTestDevice>(
-      VirtualTestDevice::createInstance("", params));
+  auto myDevice = boost::static_pointer_cast<VirtualTestDevice>(VirtualTestDevice::createInstance("", params));
   myDevice->open();
 
   // go into awaitException state and set the timer (which will trigger the
   // exception action)
-  myDevice->theStateMachine.process_event(
-      VirtualTestDevice::requestException());
+  myDevice->theStateMachine.process_event(VirtualTestDevice::requestException());
   myDevice->myTimer.set(1 * seconds);
 
   // request exception, should print a warning, so redirect cerr for this test
@@ -897,10 +873,9 @@ void VirtualLabTest::testThrowException() {
                                          // being caught inside the timer
   }
 
-  BOOST_CHECK(output.is_equal(
-      "ERROR in VirtualLabBackend: Exception thrown while processing timer "
-      "event. The state machine is now in an unusable condition. Make sure to "
-      "catch all exceptions in your actions!\n"));
+  BOOST_CHECK(output.is_equal("ERROR in VirtualLabBackend: Exception thrown while processing timer "
+                              "event. The state machine is now in an unusable condition. Make sure to "
+                              "catch all exceptions in your actions!\n"));
 
   // close device
   myDevice->close();
@@ -944,8 +919,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getAllStates().size() == 1);
 
   // set compute function
-  simpleState.setComputeFunction(
-      boost::bind(&VirtualLabTest::onCompute, this, _1));
+  simpleState.setComputeFunction(boost::bind(&VirtualLabTest::onCompute, this, _1));
 
   // obtain a value using the compute function
   onCompute_returnValue = 12345;
@@ -968,8 +942,7 @@ void VirtualLabTest::testStateVariableSet() {
 
   // go into past without history length set
   BOOST_CHECK_THROW(simpleState.getState(0), ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(simpleState.getState(3 * seconds - 1),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(3 * seconds - 1), ChimeraTK::logic_error);
   BOOST_CHECK(simpleState.getLatestTime() == 3 * seconds);
   BOOST_CHECK(simpleState.getAllStates().size() == 1);
 
@@ -1007,12 +980,10 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getState(100 * seconds) == 100);
   BOOST_CHECK(onCompute_argument == 100 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 100 * seconds);
-  BOOST_CHECK_THROW(simpleState.getState(13 * seconds + 1),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(13 * seconds + 1), ChimeraTK::logic_error);
 
   onCompute_returnValue = 101;
-  BOOST_CHECK(simpleState.getState(100 * seconds + 1 * milliseconds - 1) ==
-              100);
+  BOOST_CHECK(simpleState.getState(100 * seconds + 1 * milliseconds - 1) == 100);
   BOOST_CHECK(onCompute_argument == 100 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 100 * seconds);
   BOOST_CHECK(simpleState.getState(100 * seconds) == 100);
@@ -1025,16 +996,14 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getState(101 * seconds) == 101);
   BOOST_CHECK(onCompute_argument == 101 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 101 * seconds);
-  BOOST_CHECK_THROW(simpleState.getState(100 * seconds),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(100 * seconds), ChimeraTK::logic_error);
 
   // set maximum gap and test it
   simpleState.setMaximumGap(100 * seconds);
   simpleState.setValidityPeriod(10 * seconds);
   simpleState.setMaxHistoryLength(1000 * seconds);
   onCompute_returnValue = 10;
-  onCompute_returnValue_increment =
-      1; // increment by 1 in onCompute() *before* returning the returnValue;
+  onCompute_returnValue_increment = 1; // increment by 1 in onCompute() *before* returning the returnValue;
 
   BOOST_CHECK(simpleState.getState(201 * seconds) == 11); // single step
   BOOST_CHECK(onCompute_argument == 201 * seconds);
@@ -1044,18 +1013,15 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(onCompute_argument == 401 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 401 * seconds);
 
-  BOOST_CHECK(simpleState.getState(301 * seconds) ==
-              12); // intermediate step was already generated
+  BOOST_CHECK(simpleState.getState(301 * seconds) == 12); // intermediate step was already generated
   BOOST_CHECK(onCompute_argument == 401 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 401 * seconds);
 
-  BOOST_CHECK(simpleState.getState(311 * seconds - 1) ==
-              12); // within validity period of intermediate step
+  BOOST_CHECK(simpleState.getState(311 * seconds - 1) == 12); // within validity period of intermediate step
   BOOST_CHECK(onCompute_argument == 401 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 401 * seconds);
 
-  BOOST_CHECK(simpleState.getState(401 * seconds) ==
-              13); // the latest state should be unaffected
+  BOOST_CHECK(simpleState.getState(401 * seconds) == 13); // the latest state should be unaffected
   BOOST_CHECK(onCompute_argument == 401 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 401 * seconds);
 
@@ -1063,20 +1029,17 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(onCompute_argument == 311 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 311 * seconds);
 
-  BOOST_CHECK(
-      simpleState.getState(401 * seconds) ==
-      15); // originally latest state was deleted and will be recomputed here
+  BOOST_CHECK(simpleState.getState(401 * seconds) == 15); // originally latest state was deleted and will be recomputed
+                                                          // here
   BOOST_CHECK(onCompute_argument == 401 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 401 * seconds);
 
-  BOOST_CHECK(simpleState.getState(550 * seconds) ==
-              17); // non-integer number of steps
+  BOOST_CHECK(simpleState.getState(550 * seconds) == 17); // non-integer number of steps
   BOOST_CHECK(onCompute_argument == 550 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 550 * seconds);
 
-  BOOST_CHECK(
-      simpleState.getState(450 * seconds) ==
-      16); // the intermediate step was generated closer to the older step
+  BOOST_CHECK(simpleState.getState(450 * seconds) == 16); // the intermediate step was generated closer to the older
+                                                          // step
   BOOST_CHECK(onCompute_argument == 550 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 550 * seconds);
 
@@ -1088,17 +1051,14 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getState(350 * seconds) == 18);
   BOOST_CHECK(onCompute_argument == 350 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 350 * seconds);
-  BOOST_CHECK_THROW(simpleState.getState(311 * seconds),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(311 * seconds), ChimeraTK::logic_error);
   BOOST_CHECK(simpleState.getAllStates().size() == 1);
 
   BOOST_CHECK(simpleState.getState(800 * seconds) == 23);
   BOOST_CHECK(onCompute_argument == 800 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 800 * seconds);
-  BOOST_CHECK_THROW(simpleState.getState(700 * seconds),
-                    ChimeraTK::logic_error);
-  BOOST_CHECK_THROW(simpleState.getState(800 * seconds - 1),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(700 * seconds), ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(800 * seconds - 1), ChimeraTK::logic_error);
   BOOST_CHECK(simpleState.getAllStates().size() == 1);
 
   // test feedState()
@@ -1106,16 +1066,14 @@ void VirtualLabTest::testStateVariableSet() {
   simpleState.setValidityPeriod(1 * seconds);
   simpleState.setMaxHistoryLength(100 * seconds);
 
-  simpleState.feedState(
-      900 * seconds - 1,
+  simpleState.feedState(900 * seconds - 1,
       1234); // simply feeding a state should keep the previous one
   BOOST_CHECK(simpleState.getState(800 * seconds) == 23);
   BOOST_CHECK(simpleState.getState(900 * seconds - 1) == 1234);
   BOOST_CHECK(simpleState.getAllStates().size() == 2);
 
   simpleState.feedState(901 * seconds, 2345); // old state should be removed
-  BOOST_CHECK_THROW(simpleState.getState(800 * seconds),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(800 * seconds), ChimeraTK::logic_error);
   BOOST_CHECK(simpleState.getState(900 * seconds - 1) == 1234);
   BOOST_CHECK(simpleState.getState(901 * seconds) == 2345);
   BOOST_CHECK(simpleState.getAllStates().size() == 2);
@@ -1126,11 +1084,9 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getState(910 * seconds) == 3456);
   BOOST_CHECK(simpleState.getAllStates().size() == 3);
 
-  simpleState.feedState(
-      930 * seconds,
+  simpleState.feedState(930 * seconds,
       4567); // 4th state with a too big gap (no check performed here)
-  BOOST_CHECK_THROW(simpleState.getState(800 * seconds),
-                    ChimeraTK::logic_error);
+  BOOST_CHECK_THROW(simpleState.getState(800 * seconds), ChimeraTK::logic_error);
   BOOST_CHECK(simpleState.getState(900 * seconds - 1) == 1234);
   BOOST_CHECK(simpleState.getState(901 * seconds) == 2345);
   BOOST_CHECK(simpleState.getState(910 * seconds) == 3456);
@@ -1138,9 +1094,8 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getAllStates().size() == 4);
 
   simpleState.feedState(905 * seconds,
-                        666); // add intermediate step, removing future steps
-  BOOST_CHECK_THROW(simpleState.getState(800 * seconds),
-                    ChimeraTK::logic_error);
+      666); // add intermediate step, removing future steps
+  BOOST_CHECK_THROW(simpleState.getState(800 * seconds), ChimeraTK::logic_error);
   BOOST_CHECK(simpleState.getState(900 * seconds - 1) == 1234);
   BOOST_CHECK(simpleState.getState(901 * seconds) == 2345);
   BOOST_CHECK(simpleState.getState(905 * seconds) == 666);
@@ -1149,8 +1104,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getState(910 * seconds) == 778);
   BOOST_CHECK(onCompute_argument == 910 * seconds);
   BOOST_CHECK(simpleState.getAllStates().size() == 4);
-  BOOST_CHECK(simpleState.getState(930 * seconds) ==
-              780); // this will fill the gap
+  BOOST_CHECK(simpleState.getState(930 * seconds) == 780); // this will fill the gap
   BOOST_CHECK(onCompute_argument == 930 * seconds);
   BOOST_CHECK(simpleState.getAllStates().size() == 6);
 
@@ -1162,27 +1116,23 @@ void VirtualLabTest::testStateVariableSet() {
 
   simpleState.feedState(100800 * seconds, 0);
   onCompute_returnValue = 100;
-  onCompute_returnValue_increment =
-      1; // increment by 1 in onCompute() *before* returning the returnValue;
+  onCompute_returnValue_increment = 1; // increment by 1 in onCompute() *before* returning the returnValue;
 
   BOOST_CHECK(simpleState.getState(100810 * seconds) == 101);
   BOOST_CHECK(onCompute_argument == 100810 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 100810 * seconds);
   BOOST_CHECK(simpleState.getAllStates().size() == 2);
 
-  BOOST_CHECK(simpleState.getState(105000 * seconds) ==
-              117); // 4 huge gaps and 12 normal gaps
+  BOOST_CHECK(simpleState.getState(105000 * seconds) == 117); // 4 huge gaps and 12 normal gaps
   BOOST_CHECK(onCompute_argument == 105000 * seconds);
   BOOST_CHECK(simpleState.getLatestTime() == 105000 * seconds);
   BOOST_CHECK(simpleState.getAllStates().size() == 18);
 
-  for (int i = 0; i < 12; i++) {
-    BOOST_CHECK(simpleState.getState(105000 * seconds - i * 90 * seconds) ==
-                117 - i);
+  for(int i = 0; i < 12; i++) {
+    BOOST_CHECK(simpleState.getState(105000 * seconds - i * 90 * seconds) == 117 - i);
   }
 
-  for (int i = 1; i < 5; i++) {
-    BOOST_CHECK(simpleState.getState(105000 * seconds - i * 1000 * seconds) ==
-                106 - i);
+  for(int i = 1; i < 5; i++) {
+    BOOST_CHECK(simpleState.getState(105000 * seconds - i * 1000 * seconds) == 106 - i);
   }
 }
