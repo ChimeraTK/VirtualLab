@@ -196,7 +196,10 @@ namespace ChimeraTK { namespace VirtualLab {
      * returned state will be in the past and not older than the gap configured
      * with setMaximumGap().
      */
-    inline const STATE& getLatestState() { return buffer.rbegin()->second; }
+    inline const STATE& getLatestState() {
+      assert(buffer.size() > 0);
+      return buffer.rbegin()->second;
+    }
 
     /** Obtain the time of latest computed state. See getLatestState() for further
      * comments.
