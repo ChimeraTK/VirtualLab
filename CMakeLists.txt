@@ -32,8 +32,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -O3 -Wall -Wextra -Wuninitialized"
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
 
 # linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} ${ChimeraTK-DeviceAccess_LINKER_FLAGS} -Wl,--export-dynamic")
-set(CMAKE_EXE_LINKER_FLAGS "${ChimeraTK-DeviceAccess_LINKER_FLAGS}")
+string(APPEND CMAKE_SHARED_LINKER_FLAGS " ${ChimeraTK-DeviceAccess_LINKER_FLAGS} -Wl,--export-dynamic ")
+string(APPEND CMAKE_EXE_LINKER_FLAGS " ${ChimeraTK-DeviceAccess_LINKER_FLAGS} ")
 
 #Create the executables for automated unit testing.
 #Currently we assume that they are all tests contained in one file, so
