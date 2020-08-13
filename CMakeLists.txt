@@ -17,19 +17,12 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/)
 aux_source_directory(${CMAKE_SOURCE_DIR}/src library_sources)
 
-# Set the build type to Release if none is specified
-# Force it into Release if "None" is specified (needed to overrule dkpg_buildpackage)
-if(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
-  set(CMAKE_BUILD_TYPE "Release" CACHE STRING
-      "Choose the type of build, options are: Debug Release RelWithDebInfo MinSizeRel."
-      FORCE)
-endif(NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "None")
 
-#Moderate version of the compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -O3 -Wall -Wextra -Wuninitialized")
+include(${CMAKE_SOURCE_DIR}/cmake/set_default_build_to_release.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/set_default_flags.cmake)
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fno-inline -fno-inline-small-functions -fno-default-inline")
+include(${CMAKE_SOURCE_DIR}/cmake/enable_code_coverage_report.cmake)
 
-#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -g --coverage -fno-inline -fno-inline-small-functions -fno-default-inline")
 
 # linker flags
 string(APPEND CMAKE_SHARED_LINKER_FLAGS " ${ChimeraTK-DeviceAccess_LINKER_FLAGS} -Wl,--export-dynamic ")
@@ -61,16 +54,6 @@ endforeach( perftestExecutableSrcFile )
 foreach( FILE_TO_COPY test.mapp dummies.dmap )
   FILE (COPY tests/${FILE_TO_COPY} DESTINATION ${PROJECT_BINARY_DIR})
 endforeach( FILE_TO_COPY )
-
-#The make coverage command is only available in debug mode
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  configure_file(cmake/make_coverage.sh.in ${PROJECT_BINARY_DIR}/make_coverage.sh @ONLY)
-  add_custom_target(coverage
-    ./make_coverage.sh
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating test coverage documentation" VERBATIM
-  )
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # C++ library
 add_library(${PROJECT_NAME} SHARED ${library_sources} )
