@@ -393,26 +393,33 @@ namespace ChimeraTK { namespace VirtualLab {
 
     /// override writeArea to fire the events
     void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override {
-      std::lock_guard<std::mutex> guard(deviceLock);
 
       // save as last written data, for use inside guards of the events we may
       // trigger now
-      lastWrittenData = data;
-      lastWrittenSize = sizeInBytes;
+      {
+        std::lock_guard<std::mutex> guard(mutex);
+        lastWrittenData = data;
+        lastWrittenSize = sizeInBytes;
+      }
 
       // perform the actual write
       DummyBackend::write(bar, address, data, sizeInBytes);
 
       // trigger events
-      regWriteEvents(bar, address, sizeInBytes);
+      {
+        std::lock_guard<std::mutex> guard(mutex);
+        regWriteEvents(bar, address, sizeInBytes);
+      }
     }
 
     /// override readArea to fire the events
     void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
-      std::lock_guard<std::mutex> guard(deviceLock);
 
       // trigger events
-      regReadEvents(bar, address, sizeInBytes);
+      {
+        std::lock_guard<std::mutex> guard(mutex);
+        regReadEvents(bar, address, sizeInBytes);
+      }
 
       // perform the actual write
       DummyBackend::read(bar, address, data, sizeInBytes);
@@ -453,6 +460,7 @@ namespace ChimeraTK { namespace VirtualLab {
         if(request > 0 && current >= request) {
           request = -1;
           try {
+            std::unique_lock<std::mutex> lk(dev->mutex);
             dev->theStateMachine.process_event(timerEvent());
           }
           catch(...) {
@@ -496,9 +504,6 @@ namespace ChimeraTK { namespace VirtualLab {
     /// conditions.
     int32_t const* lastWrittenData;
     size_t lastWrittenSize;
-
-    /// mutex to prevent concurrent access to the device from different threads
-    std::mutex deviceLock;
   };
 
 }} // namespace ChimeraTK::VirtualLab
