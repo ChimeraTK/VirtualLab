@@ -392,7 +392,7 @@ namespace ChimeraTK { namespace VirtualLab {
     virtual ~VirtualLabBackend() {}
 
     /// override writeArea to fire the events
-    void write(uint8_t bar, uint32_t address, int32_t const* data, size_t sizeInBytes) override {
+    void write(uint64_t bar, uint64_t address, int32_t const* data, size_t sizeInBytes) override {
       // save as last written data, for use inside guards of the events we may
       // trigger now
       {
@@ -412,7 +412,7 @@ namespace ChimeraTK { namespace VirtualLab {
     }
 
     /// override readArea to fire the events
-    void read(uint8_t bar, uint32_t address, int32_t* data, size_t sizeInBytes) override {
+    void read(uint64_t bar, uint64_t address, int32_t* data, size_t sizeInBytes) override {
       // trigger events
       {
         std::lock_guard<std::mutex> guard(mutex);

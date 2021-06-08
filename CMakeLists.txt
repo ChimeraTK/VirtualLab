@@ -9,7 +9,7 @@ set(${PROJECT_NAME}_PATCH_VERSION 03)
 include(${CMAKE_SOURCE_DIR}/cmake/set_version_numbers.cmake)
 
 include(${CMAKE_SOURCE_DIR}/cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-DeviceAccess 01.04 REQUIRED)
+add_dependency(ChimeraTK-DeviceAccess 02.04 REQUIRED)
 
 FIND_PACKAGE(Boost COMPONENTS system unit_test_framework REQUIRED)
 
