@@ -48,7 +48,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice> {
   // Overload open and close to send events on device open and close. For a real
   // VirtualLabBackend, this should usually not be done, as the state of the
   // device driver should not be part of the state machine.
-  virtual void open() {
+  void open() override {
     someCounter = 0;
     readCount = 0;
     writeCount = 0;
@@ -59,10 +59,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice> {
     VirtualLabBackend::open();
     theStateMachine.process_event(onDeviceOpen());
   }
-  virtual void close() {
-    VirtualLabBackend::close();
-    theStateMachine.process_event(onDeviceClose());
-  }
+  void closeImpl() override { theStateMachine.process_event(onDeviceClose()); }
 
   /// states
   DECLARE_STATE(DevClosed);
