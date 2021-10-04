@@ -29,7 +29,7 @@ namespace ChimeraTK { namespace VirtualLab {
     x00, x01, x02, x03, x04, x05, x06, x07, x08, x09, x10, x11, x12, x13, x14, x15, x6, x17, x18, x19, x20, ...)       \
   x20
 #define COUNT_ARGS(...)                                                                                                \
-  COUNT_ARGS_HELPER(__VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1)
+  COUNT_ARGS_HELPER(__VA_ARGS__, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, -1)
 
 ///
 /// Helper macros: DO NOT DIRECTLY USE
@@ -44,7 +44,7 @@ namespace ChimeraTK { namespace VirtualLab {
 #define DECLARE_TIMER_GROUP_MAKEMAP(...) DECLARE_TIMER_GROUP_MAKEMAP_(COUNT_ARGS(__VA_ARGS__), __VA_ARGS__)
 #define DECLARE_TIMER_GROUP_MAKEMAP_(n, ...) DECLARE_TIMER_GROUP_MAKEMAP__(n, __VA_ARGS__)
 #define DECLARE_TIMER_GROUP_MAKEMAP__(n, ...) DECLARE_TIMER_GROUP_MAKEMAP_##n(__VA_ARGS__)
-#define DECLARE_TIMER_GROUP_MAKEMAP_1(x, ...) names.push_back(#x);
+#define DECLARE_TIMER_GROUP_MAKEMAP_1(x) names.push_back(#x);
 #define DECLARE_TIMER_GROUP_MAKEMAP_2(x, ...)                                                                          \
   names.push_back(#x);                                                                                                 \
   DECLARE_TIMER_GROUP_MAKEMAP_1(__VA_ARGS__)
@@ -88,7 +88,7 @@ namespace ChimeraTK { namespace VirtualLab {
   DECLARE_TIMER_GROUP_DECLARE_VECTOR_(COUNT_ARGS(__VA_ARGS__), __VA_ARGS__)
 #define DECLARE_TIMER_GROUP_DECLARE_VECTOR_(n, ...) DECLARE_TIMER_GROUP_DECLARE_VECTOR__(n, __VA_ARGS__)
 #define DECLARE_TIMER_GROUP_DECLARE_VECTOR__(n, ...) DECLARE_TIMER_GROUP_DECLARE_VECTOR_##n(__VA_ARGS__)
-#define DECLARE_TIMER_GROUP_DECLARE_VECTOR_1(x, ...) decltype(x)&
+#define DECLARE_TIMER_GROUP_DECLARE_VECTOR_1(x) decltype(x)&
 #define DECLARE_TIMER_GROUP_DECLARE_VECTOR_2(x, ...) decltype(x)&, DECLARE_TIMER_GROUP_DECLARE_VECTOR_1(__VA_ARGS__)
 #define DECLARE_TIMER_GROUP_DECLARE_VECTOR_3(x, ...) decltype(x)&, DECLARE_TIMER_GROUP_DECLARE_VECTOR_2(__VA_ARGS__)
 #define DECLARE_TIMER_GROUP_DECLARE_VECTOR_4(x, ...) decltype(x)&, DECLARE_TIMER_GROUP_DECLARE_VECTOR_3(__VA_ARGS__)
@@ -113,7 +113,7 @@ namespace ChimeraTK { namespace VirtualLab {
 #define DECLARE_TIMER_GROUP_INIT_VECTOR(...) DECLARE_TIMER_GROUP_INIT_VECTOR_(COUNT_ARGS(__VA_ARGS__), __VA_ARGS__)
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_(n, ...) DECLARE_TIMER_GROUP_INIT_VECTOR__(n, __VA_ARGS__)
 #define DECLARE_TIMER_GROUP_INIT_VECTOR__(n, ...) DECLARE_TIMER_GROUP_INIT_VECTOR_##n(__VA_ARGS__)
-#define DECLARE_TIMER_GROUP_INIT_VECTOR_1(x, ...) dev->x
+#define DECLARE_TIMER_GROUP_INIT_VECTOR_1(x) dev->x
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_2(x, ...) dev->x, DECLARE_TIMER_GROUP_INIT_VECTOR_1(__VA_ARGS__)
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_3(x, ...) dev->x, DECLARE_TIMER_GROUP_INIT_VECTOR_2(__VA_ARGS__)
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_4(x, ...) dev->x, DECLARE_TIMER_GROUP_INIT_VECTOR_3(__VA_ARGS__)
