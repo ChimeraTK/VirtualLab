@@ -1,0 +1,3 @@
+@Library('ChimeraTK') _
+env.MAILTO="martin.hierholzer@desy.de"
+autojob(['ChimeraTK/DeviceAccess'], 'https://github.com/ChimeraTK/VirtualLab')
