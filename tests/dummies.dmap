@@ -1,7 +1,1 @@
 DUMMY (VirtualTestDevice:0?map=test.mapp)
-# Simple backend for the creation test
-SIMPLE0A sdm://./SimplestVLBackend:0=test.mapp test.mapp
-# A second dmap entry for the same backend instance
-SIMPLE0B sdm://./SimplestVLBackend:0=test.mapp test.mapp
-# The same backend type, but another instance
-SIMPLE1 sdm://./SimplestVLBackend:1=test.mapp test.mapp

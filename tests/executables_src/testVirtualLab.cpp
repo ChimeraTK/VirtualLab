@@ -4,7 +4,6 @@
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/test/included/unit_test.hpp>
 #include <boost/test/output_test_stream.hpp>
 #include <iostream>
 #include <math.h>
@@ -16,7 +15,10 @@
 #include <ChimeraTK/Device.h>
 #include <ChimeraTK/parserUtilities.h>
 
+#define BOOST_NO_EXCEPTIONS
+#include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
+#undef BOOST_NO_EXCEPTIONS
 
 using namespace ChimeraTK;
 using namespace ChimeraTK::VirtualLab;
@@ -253,7 +255,8 @@ class VirtualLabTest {
     onValueNeeded_argument(0), onCompute_returnValue(0), onCompute_returnValue_increment(0), onCompute_argument(0) {
     std::map<std::string, std::string> params;
     params["map"] = convertPathRelativeToDmapToAbs(TEST_MAPPING_FILE);
-    device = boost::static_pointer_cast<VirtualTestDevice>(VirtualTestDevice::createInstance("0", params));
+    device =
+        boost::static_pointer_cast<VirtualTestDevice>(ChimeraTK::BackendFactory::getInstance().createBackend("DUMMY"));
   }
 
   /// test the device open and close events
@@ -341,6 +344,7 @@ test_suite* init_unit_test_suite(int /*argc*/, char* /*argv*/ []) {
 }
 
 /**********************************************************************************************************************/
+
 void VirtualLabTest::testDevOpenClose() {
   std::cout << "testDevOpenClose" << std::endl;
 
@@ -364,6 +368,7 @@ void VirtualLabTest::testDevOpenClose() {
 }
 
 /**********************************************************************************************************************/
+
 void VirtualLabTest::testTimerGroup() {
   std::cout << "testTimerGroup" << std::endl;
 
@@ -589,7 +594,6 @@ void VirtualLabTest::testTimerGroup() {
 /**********************************************************************************************************************/
 void VirtualLabTest::testReadWriteEvents() {
   int data;
-  RegisterInfoMap::RegisterInfo elem;
 
   std::cout << "testReadWriteEvents" << std::endl;
 
@@ -597,7 +601,7 @@ void VirtualLabTest::testReadWriteEvents() {
   device->open();
 
   // write to register
-  device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
+  auto elem = device->getRegisterInfo("APP0/SOME_REGISTER");
   data = 120;
   BOOST_CHECK(device->writeCount == 0);
   device->write(elem.bar, elem.address, &data, sizeof(int));
@@ -613,7 +617,7 @@ void VirtualLabTest::testReadWriteEvents() {
   BOOST_CHECK(device->readCount == 2);
 
   // write to muxed register
-  device->_registerMapping->getRegisterInfo("AREA_MULTIPLEXED_SEQUENCE_DAQ0_ADCA", elem, "APP0");
+  elem = device->getRegisterInfo("APP0/DAQ0_ADCA/MULTIPLEXED_RAW");
   data = 120;
   BOOST_CHECK(device->writeMuxedCount == 0);
   device->write(elem.bar, elem.address, &data, sizeof(int));
@@ -627,7 +631,6 @@ void VirtualLabTest::testReadWriteEvents() {
 /**********************************************************************************************************************/
 void VirtualLabTest::testGuards() {
   int data;
-  RegisterInfoMap::RegisterInfo elem;
 
   std::cout << "testGuards" << std::endl;
 
@@ -635,7 +638,7 @@ void VirtualLabTest::testGuards() {
   device->open();
 
   // write to register something passing the register guard
-  device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
+  auto elem = device->getRegisterInfo("APP0/SOME_REGISTER");
   data = 42;
   BOOST_CHECK(device->write42Count == 0);
   device->write(elem.bar, elem.address, &data, sizeof(int));
@@ -645,7 +648,7 @@ void VirtualLabTest::testGuards() {
 
   // read from register with the flag set, so the normal guard is passed
   device->someFlag = true;
-  device->_registerMapping->getRegisterInfo("SOME_REGISTER", elem, "APP0");
+  elem = device->getRegisterInfo("APP0/SOME_REGISTER");
   BOOST_CHECK(device->readWithFlagCount == 0);
   device->read(elem.bar, elem.address, &data, sizeof(int));
   BOOST_CHECK(device->readWithFlagCount == 1);
