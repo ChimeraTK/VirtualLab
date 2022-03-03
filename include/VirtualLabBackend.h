@@ -125,9 +125,9 @@ namespace mpl = boost::mpl;
  * semicolon in between - starting a new line is allowed, though!).
  *
  * (test coverage hint: this macro is used in the test) */
-#define CONNECT_REGISTER_EVENT(eventName, regsterAccessor)                                                             \
+#define CONNECT_REGISTER_EVENT(eventName, registerAccessor)                                                            \
   {                                                                                                                    \
-    if(regsterAccessor.isAddressInRange(bar, address, sizeInBytes)) {                                                  \
+    if(VirtualLabBackend::isAddressInRange(registerAccessor.getRegisterInfo(), bar, address, sizeInBytes)) {           \
       try {                                                                                                            \
         theStateMachine.process_event(eventName());                                                                    \
       }                                                                                                                \
@@ -421,6 +421,13 @@ namespace ChimeraTK { namespace VirtualLab {
 
       // perform the actual write
       DummyBackend::read(bar, address, data, sizeInBytes);
+    }
+
+    static bool isAddressInRange(
+        const NumericAddressedRegisterInfo& registerInfo, uint8_t bar, uint32_t address, size_t length) {
+      assert(registerInfo.elementPitchBits % 8 == 0);
+      return (bar == registerInfo.bar && address >= registerInfo.address &&
+          address + length <= registerInfo.address + registerInfo.nElements * registerInfo.elementPitchBits / 8);
     }
 
    protected:
