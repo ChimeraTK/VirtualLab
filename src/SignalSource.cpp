@@ -41,7 +41,7 @@ namespace ChimeraTK { namespace VirtualLab {
 
   /*******************************************************************************************************************/
   ConstantSignalSource::ConstantSignalSource(double theValue) : SignalSource(), value(theValue) {
-    setCallback(boost::bind(&ConstantSignalSource::constantCallback, this, _1));
+    setCallback(boost::bind(&ConstantSignalSource::constantCallback, this, boost::placeholders::_1));
     setValidityPeriod(std::numeric_limits<VirtualTime>::max());
   }
 

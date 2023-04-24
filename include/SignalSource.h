@@ -9,7 +9,7 @@
 #define SIGNALSOURCE_H
 
 #include <ChimeraTK/Exception.h>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <iostream>
 #include <limits>

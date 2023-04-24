@@ -1,25 +1,22 @@
-#include <algorithm>
-#include <boost/bind.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include "SignalSink.h"
+#include "StateVariableSet.h"
+#include "VirtualLabBackend.h"
+
+#include <ChimeraTK/Device.h>
+#include <ChimeraTK/parserUtilities.h>
+
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <boost/lambda/lambda.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/test/output_test_stream.hpp>
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/tools/output_test_stream.hpp>
+
+#include <algorithm>
 #include <iostream>
 #include <math.h>
 #include <tuple>
 
-#include "SignalSink.h"
-#include "StateVariableSet.h"
-#include "VirtualLabBackend.h"
-#include <ChimeraTK/Device.h>
-#include <ChimeraTK/parserUtilities.h>
-
-#define BOOST_NO_EXCEPTIONS
-#include <boost/test/included/unit_test.hpp>
 using namespace boost::unit_test_framework;
-#undef BOOST_NO_EXCEPTIONS
-
 using namespace ChimeraTK;
 using namespace ChimeraTK::VirtualLab;
 
@@ -196,25 +193,19 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice> {
           // open and close the device
           // note: an actual virtual device should never distinguish between
           // closed and opened states, since real hardware does not, either!
-          DevClosed() + onDeviceOpen() == DevOpen(),
-          DevOpen() + onDeviceClose() == DevClosed(),
-          SomeIntermediateState() + onDeviceClose() == DevClosed(),
-          CountingState() + onDeviceClose() == DevClosed(),
+          DevClosed() + onDeviceOpen() == DevOpen(), DevOpen() + onDeviceClose() == DevClosed(),
+          SomeIntermediateState() + onDeviceClose() == DevClosed(), CountingState() + onDeviceClose() == DevClosed(),
           TimerTest() + onDeviceClose() == DevClosed(),
 
           // start and stop the DAQ
-          DevOpen() + onTimer() == SomeIntermediateState(),
-          SomeIntermediateState() + onSecondTimer() == DevOpen(),
+          DevOpen() + onTimer() == SomeIntermediateState(), SomeIntermediateState() + onSecondTimer() == DevOpen(),
 
           // counting state (for counting how often a timer fired)
-          DevOpen() + goCounting() == CountingState(),
-          CountingState() + onTimer() / countingAction(),
+          DevOpen() + goCounting() == CountingState(), CountingState() + onTimer() / countingAction(),
 
           // read and write events
-          DevOpen() + onRead()[!someGuard()] / readAction(),
-          DevOpen() + onRead()[someGuard()] / readWithFlagAction(),
-          DevOpen() + onWrite()[!is42Written()] / writeAction(),
-          DevOpen() + onWrite()[is42Written()] / write42Action(),
+          DevOpen() + onRead()[!someGuard()] / readAction(), DevOpen() + onRead()[someGuard()] / readWithFlagAction(),
+          DevOpen() + onWrite()[!is42Written()] / writeAction(), DevOpen() + onWrite()[is42Written()] / write42Action(),
           DevOpen() + onWriteMuxed() / writeMuxedAction(),
 
           // test running two actions on a single event (abusing some existing
@@ -222,18 +213,14 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice> {
           DevOpen() + runDoubleAction() / (readAction(), writeAction()),
 
           // sub machine
-          DevOpen() + startSubMachine() == subMachine(),
-          subMachine() + stopSubMachine() == DevOpen(),
+          DevOpen() + startSubMachine() == subMachine(), subMachine() + stopSubMachine() == DevOpen(),
 
           // set timers via actions
-          DevOpen() + goTimerTest() / doSetTimer() == TimerTest(),
-          TimerTest() + onTimer() / doSetTimer(),
-          TimerTest() + setBothTimers() / doSetBothTimers(),
-          TimerTest() + onSecondTimer() / doSetBothTimers(),
+          DevOpen() + goTimerTest() / doSetTimer() == TimerTest(), TimerTest() + onTimer() / doSetTimer(),
+          TimerTest() + setBothTimers() / doSetBothTimers(), TimerTest() + onSecondTimer() / doSetBothTimers(),
 
           // exception throwing inside a timer
-          DevOpen() + requestException() == awaitException(),
-          awaitException() + onTimer() / throwException()));
+          DevOpen() + requestException() == awaitException(), awaitException() + onTimer() / throwException()));
 };
 
 REGISTER_BACKEND_TYPE(VirtualTestDevice);
@@ -334,7 +321,7 @@ class VirtualLabTestSuite : public test_suite {
 };
 
 /**********************************************************************************************************************/
-test_suite* init_unit_test_suite(int /*argc*/, char* /*argv*/ []) {
+test_suite* init_unit_test_suite(int /*argc*/, char* /*argv*/[]) {
   ChimeraTK::BackendFactory::getInstance().setDMapFilePath(TEST_DMAP_FILE);
 
   framework::master_test_suite().p_name.value = "VirtualLab test suite";

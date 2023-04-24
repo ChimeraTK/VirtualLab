@@ -9,7 +9,7 @@
 #define STATEVARIABLESET_H
 
 #include <ChimeraTK/Exception.h>
-#include <boost/bind.hpp>
+#include <boost/bind/bind.hpp>
 #include <boost/function.hpp>
 #include <limits>
 #include <map>
@@ -37,6 +37,7 @@ namespace ChimeraTK { namespace VirtualLab {
       validityPeriod(1), historyLength(0), currentTime(std::numeric_limits<VirtualTime>::min()),
       enableInterpolation(false) {
 #ifdef ENABLE_EXPERIMENTAL_FEATURES
+      using boost::placeholders;
       interpolate = boost::bind(&StateVariableSet::defaultInterpolate, this, _1, _2, _3, _4, _5);
 #endif
     }
