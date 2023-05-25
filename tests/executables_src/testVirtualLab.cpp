@@ -795,7 +795,8 @@ void VirtualLabTest::testSinkSource() {
   BOOST_CHECK_THROW(sink.getValue(100 * days), ChimeraTK::logic_error);
 
   // test SignalSource's callback function "onHistoryLengthChanged"
-  source->setOnHistoryLengthChanged(boost::bind(&VirtualLabTest::onHistoryLengthChanged, this, _1));
+  source->setOnHistoryLengthChanged(
+      boost::bind(&VirtualLabTest::onHistoryLengthChanged, this, boost::placeholders::_1));
   onHistoryLengthChanged_argument = 0;
   sink.setMaxHistoryLength(42 * seconds);
   BOOST_CHECK(onHistoryLengthChanged_argument == 42 * seconds);
@@ -805,7 +806,7 @@ void VirtualLabTest::testSinkSource() {
   // function
   source = boost::make_shared<SignalSource>();
   sink.connect(source);
-  source->setCallback(boost::bind(&VirtualLabTest::onValueNeeded, this, _1));
+  source->setCallback(boost::bind(&VirtualLabTest::onValueNeeded, this, boost::placeholders::_1));
 
   onValueNeeded_returnValue = 234.567;
   BOOST_CHECK(sink.getValue(1 * seconds) == 234.567);
@@ -906,7 +907,7 @@ void VirtualLabTest::testStateVariableSet() {
   BOOST_CHECK(simpleState.getAllStates().size() == 1);
 
   // set compute function
-  simpleState.setComputeFunction(boost::bind(&VirtualLabTest::onCompute, this, _1));
+  simpleState.setComputeFunction(boost::bind(&VirtualLabTest::onCompute, this, boost::placeholders::_1));
 
   // obtain a value using the compute function
   onCompute_returnValue = 12345;
