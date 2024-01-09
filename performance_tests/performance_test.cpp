@@ -9,7 +9,8 @@
 
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int.hpp>
-#include <boost/timer.hpp>
+
+#include <chrono>
 
 using namespace ChimeraTK::VirtualLab;
 
@@ -80,7 +81,7 @@ int main() {
   int32_t* buffer = new int32_t[nel];
 
   // prepare timers to measure the wall time
-  boost::timer theTimer;
+  auto startTime = std::chrono::system_clock::now();
   double nullTime = 0;
   double rawTime = 0;
   double accessorTime = 0;
@@ -95,7 +96,7 @@ int main() {
     // "null" benchmark: just the surrounding stuff to get the offset (for
     // comparison)
     //
-    theTimer.restart();
+    startTime = std::chrono::system_clock::now();
 
     // fill the buffer
     for(unsigned int i = 0; i < nel; i++) {
@@ -108,12 +109,12 @@ int main() {
     for(unsigned int i = 0; i < nel; i++) sum += buffer[i];
     std::cout << "iter = " << iter << "n   sum = " << sum << "\r" << std::flush;
 
-    nullTime += theTimer.elapsed();
+    nullTime += double((std::chrono::system_clock::now() - startTime).count()) / 1.e9;
 
     //
     // benchmark direct barContents access (for comparison)
     //
-    theTimer.restart();
+    startTime = std::chrono::system_clock::now();
 
     // fill the buffer
     for(unsigned int i = 0; i < nel; i++) {
@@ -129,12 +130,12 @@ int main() {
     for(unsigned int i = 0; i < nel; i++) sum += dev._barContents[2][i];
     std::cout << "iter = " << iter << "r   sum = " << sum << "\r" << std::flush;
 
-    rawTime += theTimer.elapsed();
+    rawTime += double((std::chrono::system_clock::now() - startTime).count()) / 1.e9;
 
     //
     // benchmark register accessor
     //
-    theTimer.restart();
+    startTime = std::chrono::system_clock::now();
 
     // fill the buffer
     for(unsigned int i = 0; i < nel; i++) {
@@ -150,12 +151,12 @@ int main() {
     for(unsigned int i = 0; i < nel; i++) sum += dev._barContents[2][i];
     std::cout << "iter = " << iter << "a   sum = " << sum << "\r" << std::flush;
 
-    accessorTime += theTimer.elapsed();
+    accessorTime += double((std::chrono::system_clock::now() - startTime).count()) / 1.e9;
 
     //
     // benchmark state machine + register accessor
     //
-    theTimer.restart();
+    startTime = std::chrono::system_clock::now();
 
     // set the virtual timer and the register offset pointer
     dev.myTimer.set(1);
@@ -178,7 +179,7 @@ int main() {
     for(unsigned int i = 0; i < nel; i++) sum += dev._barContents[2][i];
     std::cout << "iter = " << iter << "s   sum = " << sum << "\r" << std::flush;
 
-    statemachineTime += theTimer.elapsed();
+    statemachineTime += double((std::chrono::system_clock::now() - startTime).count()) / 1.e9;
   }
 
   std::cout << "Performed " << nel * niter << " writes each." << std::endl;
