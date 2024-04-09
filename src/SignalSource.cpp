@@ -18,13 +18,19 @@ namespace ChimeraTK { namespace VirtualLab {
   }
 
   /*******************************************************************************************************************/
-  void SignalSource::setValidityPeriod(VirtualTime period) { buffer.setValidityPeriod(period); }
+  void SignalSource::setValidityPeriod(VirtualTime period) {
+    buffer.setValidityPeriod(period);
+  }
 
   /*******************************************************************************************************************/
-  void SignalSource::setMaximumGap(VirtualTime maxGap) { buffer.setMaximumGap(maxGap); }
+  void SignalSource::setMaximumGap(VirtualTime maxGap) {
+    buffer.setMaximumGap(maxGap);
+  }
 
   /*******************************************************************************************************************/
-  void SignalSource::setHugeGap(VirtualTime hugeGap) { buffer.setHugeGap(hugeGap); }
+  void SignalSource::setHugeGap(VirtualTime hugeGap) {
+    buffer.setHugeGap(hugeGap);
+  }
 
   /*******************************************************************************************************************/
   void SignalSource::setMaxHistoryLength(VirtualTime timeDifference) {
