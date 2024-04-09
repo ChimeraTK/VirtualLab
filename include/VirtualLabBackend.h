@@ -211,7 +211,7 @@ namespace mpl = boost::mpl;
  * (test coverage hint: this macro is used in the test) */
 #define DECLARE_TIMER_GROUP(name, ...)                                                                                 \
   typedef boost::fusion::vector<DECLARE_TIMER_GROUP_DECLARE_VECTOR(__VA_ARGS__)> name##__;                             \
-  class name##_ : public TimerGroup<name##__> {                                                                        \
+  class name##_ : public ChimeraTK::VirtualLab::TimerGroup<name##__> {                                                 \
    public:                                                                                                             \
     name##_(dummyDeviceType* _dev) : TimerGroup(), dev(_dev) {                                                         \
       DECLARE_TIMER_GROUP_MAKEMAP(__VA_ARGS__)                                                                         \
@@ -318,7 +318,7 @@ namespace mpl = boost::mpl;
   };                                                                                                                   \
   static BackendRegisterer backendRegisterer;                                                                          \
   /* Actual constructor of the VirtualLabBackend class. */                                                             \
-  name(std::string mapFileName) : VirtualLabBackend(mapFileName), ##__VA_ARGS__, theStateMachine(this) {
+  explicit name(std::string mapFileName) : VirtualLabBackend(mapFileName), ##__VA_ARGS__, theStateMachine(this) {
 #define END_CONSTRUCTOR }
 
 /** \def INIT_SUB_STATE_MACHINE(name)
