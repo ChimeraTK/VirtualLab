@@ -8,13 +8,15 @@
 #ifndef TIMERGROUP_H
 #define TIMERGROUP_H
 
-#include <memory>
+#include "VirtualTime.h"
 
 #include <boost/fusion/algorithm.hpp>
 #include <boost/fusion/container.hpp>
 #include <boost/fusion/sequence.hpp>
 
-#include "VirtualTime.h"
+#include <cmath>
+#include <limits>
+#include <memory>
 
 namespace ChimeraTK { namespace VirtualLab {
 

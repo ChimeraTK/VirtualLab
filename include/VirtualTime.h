@@ -8,6 +8,8 @@
 #ifndef VIRTUALTIME_H_
 #define VIRTUALTIME_H_
 
+#include <stdint.h>
+
 namespace ChimeraTK { namespace VirtualLab {
 
   /**

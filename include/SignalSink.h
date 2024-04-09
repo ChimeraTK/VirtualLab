@@ -9,6 +9,7 @@
 #define SIGNALSINK_H
 
 #include "SignalSource.h"
+
 #include <boost/make_shared.hpp>
 
 namespace ChimeraTK { namespace VirtualLab {
