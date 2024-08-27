@@ -240,7 +240,9 @@ namespace mpl = boost::mpl;
   class stateMachineName##_ : public stateMachineName##__ {                                                            \
    public:                                                                                                             \
     stateMachineName##_() : stateMachineName##__() {}                                                                  \
-    void setDummyDevice(dummyDeviceType* _dev) { dev = _dev; }                                                         \
+    void setDummyDevice(dummyDeviceType* _dev) {                                                                       \
+      dev = _dev;                                                                                                      \
+    }                                                                                                                  \
     dummyDeviceType* dev;                                                                                              \
   };                                                                                                                   \
   typedef msm::back::state_machine<stateMachineName##_> stateMachineName
@@ -257,7 +259,9 @@ namespace mpl = boost::mpl;
   BOOST_MSM_EUML_DECLARE_STATE_MACHINE((mainStateMachine_table, init_ << initialState), mainStateMachine__)            \
   class mainStateMachine_ : public mainStateMachine__ {                                                                \
    public:                                                                                                             \
-    mainStateMachine_(dummyDeviceType* _dev) : mainStateMachine__(), dev(_dev) {}                                      \
+    mainStateMachine_(dummyDeviceType* _dev) : mainStateMachine__(), dev(_dev) {                                       \
+      _dev->theStateMachine.start();                                                                                   \
+    }                                                                                                                  \
     dummyDeviceType* dev;                                                                                              \
   };                                                                                                                   \
   typedef msm::back::state_machine<mainStateMachine_> mainStateMachine;                                                \
@@ -382,10 +386,7 @@ namespace ChimeraTK { namespace VirtualLab {
     // constructor via standard device model decription (as used by the
     // DeviceFactory)
     VirtualLabBackend(std::string mapFileName)
-    : ChimeraTK::DummyBackend(mapFileName), lastWrittenData(NULL), lastWrittenSize(0) {
-      // start the main state machine
-      static_cast<derived&>(*this).theStateMachine.start();
-    }
+    : ChimeraTK::DummyBackend(mapFileName), lastWrittenData(NULL), lastWrittenSize(0) {}
 
     virtual ~VirtualLabBackend() {}
 
