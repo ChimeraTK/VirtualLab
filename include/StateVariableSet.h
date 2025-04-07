@@ -50,9 +50,7 @@ namespace ChimeraTK { namespace VirtualLab {
      *  It is mandatory to set the initial state before the first call to
      * getState().
      */
-    void setInitialState(const STATE& state) {
-      feedState(0, state);
-    }
+    void setInitialState(const STATE& state) { feedState(0, state); }
 
     /** Set callback function which will compute a new state for a given time.
      *
@@ -62,15 +60,11 @@ namespace ChimeraTK { namespace VirtualLab {
      *
      *  It is mandatory to set this function.
      */
-    void setComputeFunction(const boost::function<const STATE(VirtualTime)>& callback) {
-      compute = callback;
-    }
+    void setComputeFunction(const boost::function<const STATE(VirtualTime)>& callback) { compute = callback; }
 
     /** Obtain the callback function previously set with setComputeFunction().
      */
-    const boost::function<const STATE(VirtualTime)>& getComputeFunction() {
-      return compute;
-    }
+    const boost::function<const STATE(VirtualTime)>& getComputeFunction() { return compute; }
 
     /** Set maximum time gap. If a state further into the future of the latest
      * computed state than the maximum gap time is requested, intermediate states
@@ -79,9 +73,7 @@ namespace ChimeraTK { namespace VirtualLab {
      *  If the gap is not set, intermediate states are never computed. The maximum
      * gap must be larger than the validity period to have an effect.
      */
-    void setMaximumGap(VirtualTime time) {
-      maxGap = time;
-    }
+    void setMaximumGap(VirtualTime time) { maxGap = time; }
 
     /** Set - in addition to the maximum gap - an even bigger gap, which will be
      * used to fill larger steps. If a state is requested into the far future
@@ -93,9 +85,7 @@ namespace ChimeraTK { namespace VirtualLab {
      *  The hugeGap must be larger than maxGap. If not set, the feature is
      * disabled and only maxGap is used to fill large steps.
      */
-    void setHugeGap(VirtualTime time) {
-      hugeGap = time;
-    }
+    void setHugeGap(VirtualTime time) { hugeGap = time; }
 
     /** Experimental feature: enable by defining ENABLE_EXPERIMENTAL_FEATURES
      *  Enable interpolation. No states will be fully computed by the model closer
@@ -135,9 +125,7 @@ namespace ChimeraTK { namespace VirtualLab {
      * period to have an effect and should normally be larger then the maximum
      * gap.
      */
-    void setMaxHistoryLength(VirtualTime timeDifference) {
-      historyLength = timeDifference;
-    }
+    void setMaxHistoryLength(VirtualTime timeDifference) { historyLength = timeDifference; }
 
     /** Set validity period. A state for the time T will be used when a state for
      * a time < T+validityPeriod (and > T) is requested. It is not possible to
@@ -146,9 +134,7 @@ namespace ChimeraTK { namespace VirtualLab {
      *  Setting the validity period is optional, it will default to 1 (i.e. no
      * effect). The period must be > 0.
      */
-    void setValidityPeriod(VirtualTime period) {
-      validityPeriod = period;
-    }
+    void setValidityPeriod(VirtualTime period) { validityPeriod = period; }
 
     /** Obtain the state for the given time. time must be >= 0.
      *  The optional second argument forceNoInterpolation allows to disable a
@@ -222,15 +208,11 @@ namespace ChimeraTK { namespace VirtualLab {
     /** Obtain the time of latest computed state. See getLatestState() for further
      * comments.
      */
-    inline VirtualTime getLatestTime() {
-      return currentTime;
-    }
+    inline VirtualTime getLatestTime() { return currentTime; }
 
     /** Obtain the current map of states.
      */
-    inline const std::map<VirtualTime, STATE>& getAllStates() {
-      return buffer;
-    }
+    inline const std::map<VirtualTime, STATE>& getAllStates() { return buffer; }
 
     /** Feed a state to the buffer. This can be used to provide values/states
      * outside the compute callback function. e.g. if the values are computed in a

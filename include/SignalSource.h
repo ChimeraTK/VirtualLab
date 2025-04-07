@@ -111,9 +111,7 @@ namespace ChimeraTK { namespace VirtualLab {
 
     /** [call from backend/model] provide new value for the given time
      */
-    inline void feedValue(VirtualTime time, double value) {
-      buffer.feedState(time, value);
-    }
+    inline void feedValue(VirtualTime time, double value) { buffer.feedState(time, value); }
 
     /** [called from sink] obtain value for the given time. time must be >= 0.
      */
@@ -137,16 +135,12 @@ namespace ChimeraTK { namespace VirtualLab {
      * returned value will be in the past and not older than the gap configured
      * with setMaximumGap().
      */
-    inline double getLatestValue() {
-      return buffer.getLatestState();
-    }
+    inline double getLatestValue() { return buffer.getLatestState(); }
 
     /** Obtain the time of latest computed value. See getLatestValue() for further
      * comments.
      */
-    inline VirtualTime getLatestTime() {
-      return buffer.getLatestTime();
-    }
+    inline VirtualTime getLatestTime() { return buffer.getLatestTime(); }
 
     /** [called from sink] set maximum time difference a getValue() request may go
      * into the past
