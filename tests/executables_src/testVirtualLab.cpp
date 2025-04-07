@@ -11,9 +11,10 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/tools/output_test_stream.hpp>
 
+#include <math.h>
+
 #include <algorithm>
 #include <iostream>
-#include <math.h>
 #include <tuple>
 
 using namespace boost::unit_test_framework;
@@ -145,7 +146,7 @@ class VirtualTestDevice : public VirtualLabBackend<VirtualTestDevice> {
   class timers_ : public timers___ {
    public:
     friend class VirtualLabTest;
-    timers_(dummyDeviceType* _dev) : timers___(_dev){};
+    timers_(dummyDeviceType* _dev) : timers___(_dev) {};
   };
   timers_ timers;
 

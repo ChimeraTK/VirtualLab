@@ -126,129 +126,129 @@ namespace ChimeraTK { namespace VirtualLab {
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_9(x, ...) dev->x, DECLARE_TIMER_GROUP_INIT_VECTOR_8(__VA_ARGS__)
 #define DECLARE_TIMER_GROUP_INIT_VECTOR_10(x, ...) dev->x, DECLARE_TIMER_GROUP_INIT_VECTOR_9(__VA_ARGS__)
 
-    /**
-     * Timer group base class.
-     * The template agument must be a boost::fusion::vector of the timer types.
-     * The implementation must initialise the timerTypes vector "timers" with all
-     * timers and the map names with the timer names and the corresponding index in
-     * the timerTypes vector.
-     *
-     * This implementation is done for VirtualDevices using the DECLARE_TIMER_GROUP
-     * macro.
-     */
-    template<class timerTypes>
-    class TimerGroup {
-     public:
-      TimerGroup() : findRemainingByName_index(0), current(0) {}
-      ~TimerGroup() {}
+  /**
+   * Timer group base class.
+   * The template agument must be a boost::fusion::vector of the timer types.
+   * The implementation must initialise the timerTypes vector "timers" with all
+   * timers and the map names with the timer names and the corresponding index in
+   * the timerTypes vector.
+   *
+   * This implementation is done for VirtualDevices using the DECLARE_TIMER_GROUP
+   * macro.
+   */
+  template<class timerTypes>
+  class TimerGroup {
+   public:
+    TimerGroup() : findRemainingByName_index(0), current(0) {}
+    ~TimerGroup() {}
 
-      /// Get remaining time until the next timer fires, or -1 if no timer has been
-      /// set.
-      VirtualTime getRemaining() {
-        VirtualTime remaining = std::numeric_limits<VirtualTime>::max();
-        boost::fusion::for_each(*timers, findRemaining(remaining));
-        if(remaining >= std::numeric_limits<VirtualTime>::max()) return -1;
-        return remaining;
+    /// Get remaining time until the next timer fires, or -1 if no timer has been
+    /// set.
+    VirtualTime getRemaining() {
+      VirtualTime remaining = std::numeric_limits<VirtualTime>::max();
+      boost::fusion::for_each(*timers, findRemaining(remaining));
+      if(remaining >= std::numeric_limits<VirtualTime>::max()) return -1;
+      return remaining;
+    }
+
+    /// Get remaining time until the specified timer fires, or -1 if the timer has
+    /// not been set. Note: this call will be relatively expensive due to the
+    /// string argument. If possible (e.g. inside a VirtualDevice implementation),
+    /// access the subtimer directly.
+    VirtualTime getRemaining(std::string name) {
+      VirtualTime remaining = -2;
+      boost::fusion::for_each(*timers, findRemainingByName(*this, name, remaining));
+      return remaining;
+    }
+
+    /// Advance the timer's current time by tval. Returns true if any timer was
+    /// fired. If tval < 0, this function does nothing. If tval > getRemaining(),
+    /// the timer is advanced in multiple steps to make sure repetitive events are
+    /// fired.
+    bool advance(VirtualTime tval) {
+      if(tval < 0) return false;
+      current += tval;
+      bool hasFired = false;
+      do {
+        VirtualTime tstep = fmin(tval, getRemaining());
+        boost::fusion::for_each(*timers, advanceTimer(tstep, hasFired));
+        tval -= tstep;
+      } while(tval > 0);
+      return hasFired;
+    }
+
+    /// Advance the timer to the next requested time. Returns true if any timer
+    /// was fired. Otherwise none of the timers was set and thus the current time
+    /// remains unchanged
+    bool advance() { return advance(getRemaining()); }
+
+    /// Advance the group to the next requested time of the given sub-timer.
+    /// Returns true if any timer was fired. Note: this call will be relatively
+    /// expensive due to the string argument. If possible (e.g. inside a
+    /// VirtualDevice implementation), access the subtimer directly, obtain its
+    /// remaining time and call advance(VirtualTime).
+    bool advance(std::string name) { return advance(getRemaining(name)); }
+
+    /// Get current time
+    VirtualTime getCurrent() { return current; }
+
+   protected:
+    /// functor to find the smallest remaining time
+    struct findRemaining {
+      findRemaining(VirtualTime& _minRemaining) : minRemaining(_minRemaining) {}
+      template<class T>
+      void operator()(T& t) const {
+        VirtualTime tval = t.getRemaining();
+        if(tval >= 0 && tval < minRemaining) minRemaining = tval;
       }
 
-      /// Get remaining time until the specified timer fires, or -1 if the timer has
-      /// not been set. Note: this call will be relatively expensive due to the
-      /// string argument. If possible (e.g. inside a VirtualDevice implementation),
-      /// access the subtimer directly.
-      VirtualTime getRemaining(std::string name) {
-        VirtualTime remaining = -2;
-        boost::fusion::for_each(*timers, findRemainingByName(*this, name, remaining));
-        return remaining;
-      }
-
-      /// Advance the timer's current time by tval. Returns true if any timer was
-      /// fired. If tval < 0, this function does nothing. If tval > getRemaining(),
-      /// the timer is advanced in multiple steps to make sure repetitive events are
-      /// fired.
-      bool advance(VirtualTime tval) {
-        if(tval < 0) return false;
-        current += tval;
-        bool hasFired = false;
-        do {
-          VirtualTime tstep = fmin(tval, getRemaining());
-          boost::fusion::for_each(*timers, advanceTimer(tstep, hasFired));
-          tval -= tstep;
-        } while(tval > 0);
-        return hasFired;
-      }
-
-      /// Advance the timer to the next requested time. Returns true if any timer
-      /// was fired. Otherwise none of the timers was set and thus the current time
-      /// remains unchanged
-      bool advance() { return advance(getRemaining()); }
-
-      /// Advance the group to the next requested time of the given sub-timer.
-      /// Returns true if any timer was fired. Note: this call will be relatively
-      /// expensive due to the string argument. If possible (e.g. inside a
-      /// VirtualDevice implementation), access the subtimer directly, obtain its
-      /// remaining time and call advance(VirtualTime).
-      bool advance(std::string name) { return advance(getRemaining(name)); }
-
-      /// Get current time
-      VirtualTime getCurrent() { return current; }
-
-     protected:
-      /// functor to find the smallest remaining time
-      struct findRemaining {
-        findRemaining(VirtualTime& _minRemaining) : minRemaining(_minRemaining) {}
-        template<class T>
-        void operator()(T& t) const {
-          VirtualTime tval = t.getRemaining();
-          if(tval >= 0 && tval < minRemaining) minRemaining = tval;
-        }
-
-       private:
-        VirtualTime& minRemaining;
-      };
-
-      /// functor to find the remaining time of a given timer
-      int findRemainingByName_index;
-      struct findRemainingByName {
-        findRemainingByName(TimerGroup<timerTypes>& _group, std::string& _name, VirtualTime& _remaining)
-        : group(_group), name(_name), remaining(_remaining) {
-          group.findRemainingByName_index = 0;
-        }
-        template<class T>
-        void operator()(T& t) const {
-          if(group.names[group.findRemainingByName_index++] != name) return;
-          remaining = t.getRemaining();
-        }
-
-       private:
-        TimerGroup<timerTypes>& group;
-        std::string& name;
-        VirtualTime& remaining;
-      };
-
-      /// functor to advance timers by the given time
-      struct advanceTimer {
-        advanceTimer(VirtualTime _tval, bool& _hasFired) : tval(_tval), hasFired(_hasFired) {}
-        template<class T>
-        void operator()(T& t) const {
-          bool r;
-          r = t.advance(tval);
-          if(r) hasFired = true;
-        }
-
-       private:
-        VirtualTime tval;
-        bool& hasFired;
-      };
-
-      /// fusion::vector of timer instances
-      std::unique_ptr<timerTypes> timers;
-
-      /// std::vector of timer names
-      std::vector<std::string> names;
-
-      /// current time
-      VirtualTime current;
+     private:
+      VirtualTime& minRemaining;
     };
+
+    /// functor to find the remaining time of a given timer
+    int findRemainingByName_index;
+    struct findRemainingByName {
+      findRemainingByName(TimerGroup<timerTypes>& _group, std::string& _name, VirtualTime& _remaining)
+      : group(_group), name(_name), remaining(_remaining) {
+        group.findRemainingByName_index = 0;
+      }
+      template<class T>
+      void operator()(T& t) const {
+        if(group.names[group.findRemainingByName_index++] != name) return;
+        remaining = t.getRemaining();
+      }
+
+     private:
+      TimerGroup<timerTypes>& group;
+      std::string& name;
+      VirtualTime& remaining;
+    };
+
+    /// functor to advance timers by the given time
+    struct advanceTimer {
+      advanceTimer(VirtualTime _tval, bool& _hasFired) : tval(_tval), hasFired(_hasFired) {}
+      template<class T>
+      void operator()(T& t) const {
+        bool r;
+        r = t.advance(tval);
+        if(r) hasFired = true;
+      }
+
+     private:
+      VirtualTime tval;
+      bool& hasFired;
+    };
+
+    /// fusion::vector of timer instances
+    std::unique_ptr<timerTypes> timers;
+
+    /// std::vector of timer names
+    std::vector<std::string> names;
+
+    /// current time
+    VirtualTime current;
+  };
 
 }} // namespace ChimeraTK::VirtualLab
 
