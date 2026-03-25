@@ -20,7 +20,19 @@
 #include <map>
 #include <sstream>
 
-namespace ChimeraTK { namespace VirtualLab {
+namespace ChimeraTK::VirtualLab {
+
+  namespace detail {
+
+    template<std::integral T>
+    inline T saturatingAdd(T a, T b) {
+      T result;
+      if(__builtin_add_overflow(a, b, &result)) {
+        return a > T(0) ? std::numeric_limits<T>::max() : std::numeric_limits<T>::lowest();
+      }
+      return result;
+    }
+  } // namespace detail
 
   /** A set of state variables contains a struct of time-dependent variables. In
    * this class a mechanism is provided which helps keeping track of these
@@ -147,7 +159,7 @@ namespace ChimeraTK { namespace VirtualLab {
       (void)forceNoInterpolation; // avoid warning
 #endif
       // check if time is the current time and return the latest element
-      if(time >= currentTime && time < currentTime + validityPeriod) {
+      if(time >= currentTime && time < detail::saturatingAdd(currentTime, validityPeriod)) {
         return getLatestState();
       }
       // search in buffer: find the first element after the requested time
@@ -365,7 +377,7 @@ namespace ChimeraTK { namespace VirtualLab {
     }
   };
 
-}} // namespace ChimeraTK::VirtualLab
+} // namespace ChimeraTK::VirtualLab
 
 // Compatibility
 namespace mtca4u { namespace VirtualLab {
