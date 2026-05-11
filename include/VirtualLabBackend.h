@@ -92,7 +92,7 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: these two macros are used in the test) */
 #define WRITEEVENT_TABLE                                                                                               \
-  void regWriteEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {                                             \
+  void regWriteEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) override {                                    \
     (void)bar;                                                                                                         \
     (void)address;                                                                                                     \
     (void)sizeInBytes;
@@ -106,7 +106,7 @@ namespace mpl = boost::mpl;
  *
  * (test coverage hint: these two macros are used in the test) */
 #define READEVENT_TABLE                                                                                                \
-  void regReadEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) {                                              \
+  void regReadEvents(uint8_t bar, uint32_t address, size_t sizeInBytes) override {                                     \
     (void)bar;                                                                                                         \
     (void)address;                                                                                                     \
     (void)sizeInBytes;
@@ -322,7 +322,8 @@ namespace mpl = boost::mpl;
   };                                                                                                                   \
   static BackendRegisterer backendRegisterer;                                                                          \
   /* Actual constructor of the VirtualLabBackend class. */                                                             \
-  explicit name(std::string mapFileName) : VirtualLabBackend(mapFileName), ##__VA_ARGS__, theStateMachine(this) {
+  explicit name(std::string mapFileName)                                                                               \
+  : VirtualLabBackend(mapFileName) __VA_OPT__(, ) __VA_ARGS__, theStateMachine(this) {
 #define END_CONSTRUCTOR }
 
 /** \def INIT_SUB_STATE_MACHINE(name)
