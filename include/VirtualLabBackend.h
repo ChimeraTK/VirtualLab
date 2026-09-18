@@ -301,7 +301,7 @@ namespace mpl = boost::mpl;
     if(parameters["map"].empty()) {                                                                                    \
       throw ChimeraTK::logic_error("No map file name given in the device descriptor.");                                \
     }                                                                                                                  \
-    return returnInstance<name>(address, convertPathRelativeToDmapToAbs(parameters["map"]));                           \
+    return returnInstance<name>(address, parameters["map"]);                                                           \
   }                                                                                                                    \
   /* Static and global instance map (plain static members don't work                                                   \
    * header-only!) */                                                                                                  \
